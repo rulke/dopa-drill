@@ -3,7 +3,8 @@
 // date (so it is the same all day) and from what this child can do today.
 // Pure logic; main.js feeds play events and saves the state.
 
-import { SKILL } from './skills.js';
+import { SKILL, skillName } from './skills.js';
+import { t } from './i18n.js';
 
 export const QUEST_MINUTES = 15;
 
@@ -17,17 +18,17 @@ const reviewMinutes = (ctx) => (Math.min(10, Math.max(1, ctx.review)) * 18 + 30)
 // plays it takes for this child. need: whether it can be offered today.
 const cellsPerPlay = (c) => c.count * c.avgCells;
 export const QUESTS = [
-  { id: 'play1', tier: 'easy', metric: 'play', goal: 1, text: () => '1回 あそぶ', mode: 'any', plays: () => 1 },
-  { id: 'combo5', tier: 'easy', metric: 'combo', goal: 5, text: () => '5コンボを だす', mode: 'any', plays: () => 1 },
-  { id: 'first5', tier: 'easy', metric: 'firstTry', goal: 5, text: () => '初回正解を 5もん', mode: 'any', plays: (c) => Math.ceil(5 / (c.count * 0.7)) },
-  { id: 'review1', tier: 'easy', metric: 'review', goal: 1, text: () => 'ふくしゅうを 1もん', mode: 'review', plays: () => 1, need: (c) => c.review > 0 },
-  { id: 'new1', tier: 'easy', metric: 'newSkill', goal: 1, text: () => 'NEWの スキルを 1もん', mode: 'any', plays: () => 1, need: (c) => c.hasNew },
-  { id: 'extra', tier: 'hard', metric: 'extraReach', goal: 1, text: () => 'エクストラまで すすむ', mode: 'any', plays: () => 1, need: (c) => c.extraOk },
-  { id: 'extra5', tier: 'hard', metric: 'extraSolved', goal: 5, text: () => 'エクストラで 5もん とく', mode: 'any', plays: () => 1, need: (c) => c.extraOk },
-  { id: 'combo20', tier: 'hard', metric: 'combo', goal: 20, text: () => '20コンボを だす', mode: 'any', plays: () => 2, need: (c) => cellsPerPlay(c) >= 26 },
-  { id: 'play2', tier: 'hard', metric: 'play', goal: 2, text: () => '2回 あそぶ', mode: 'any', plays: () => 2 },
-  { id: 'grade1', tier: 'hard', metric: 'gradePlay', goal: 1, text: () => '学年べつで 1回 あそぶ', mode: 'grade', plays: () => 1 },
-  { id: 'learn10', tier: 'hard', metric: 'learning', goal: 10, text: () => 'れんしゅうちゅうの スキルを 10もん', mode: 'any', plays: (c) => Math.ceil(10 / (c.count * 0.6)), need: (c) => c.hasLearning && c.placed },
+  { id: 'play1', tier: 'easy', metric: 'play', goal: 1, text: () => t('玩1次'), mode: 'any', plays: () => 1 },
+  { id: 'combo5', tier: 'easy', metric: 'combo', goal: 5, text: () => t('达成5连击'), mode: 'any', plays: () => 1 },
+  { id: 'first5', tier: 'easy', metric: 'firstTry', goal: 5, text: () => t('一次答对5题'), mode: 'any', plays: (c) => Math.ceil(5 / (c.count * 0.7)) },
+  { id: 'review1', tier: 'easy', metric: 'review', goal: 1, text: () => t('复习1题'), mode: 'review', plays: () => 1, need: (c) => c.review > 0 },
+  { id: 'new1', tier: 'easy', metric: 'newSkill', goal: 1, text: () => t('做1题新技能'), mode: 'any', plays: () => 1, need: (c) => c.hasNew },
+  { id: 'extra', tier: 'hard', metric: 'extraReach', goal: 1, text: () => t('进入加时挑战'), mode: 'any', plays: () => 1, need: (c) => c.extraOk },
+  { id: 'extra5', tier: 'hard', metric: 'extraSolved', goal: 5, text: () => t('加时挑战答对5题'), mode: 'any', plays: () => 1, need: (c) => c.extraOk },
+  { id: 'combo20', tier: 'hard', metric: 'combo', goal: 20, text: () => t('达成20连击'), mode: 'any', plays: () => 2, need: (c) => cellsPerPlay(c) >= 26 },
+  { id: 'play2', tier: 'hard', metric: 'play', goal: 2, text: () => t('玩2次'), mode: 'any', plays: () => 2 },
+  { id: 'grade1', tier: 'hard', metric: 'gradePlay', goal: 1, text: () => t('按年级玩1次'), mode: 'grade', plays: () => 1 },
+  { id: 'learn10', tier: 'hard', metric: 'learning', goal: 10, text: () => t('练习中的技能做10题'), mode: 'any', plays: (c) => Math.ceil(10 / (c.count * 0.6)), need: (c) => c.hasLearning && c.placed },
 ];
 export const QUEST = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
 
@@ -37,7 +38,7 @@ export const DYNAMIC = [
   // Polish a rusty skill (id040): now and then, at most twice a week, only
   // when a skill is rusty. Tapping it on the title starts that practice.
   { id: 'polish', tier: 'hard', metric: 'skill', goal: 3, mode: 'practice', plays: () => 1,
-    text: (q) => `「${SKILL[q.skill] ? SKILL[q.skill].name : ''}」を みがく（3もん）`,
+    text: (q) => t('擦亮「{name}」（3题）', { name: SKILL[q.skill] ? skillName(q.skill) : '' }),
     pick(ctx, rng) {
       const chance = rng();
       if (!ctx.rusty || !ctx.rusty.length || (ctx.polishWeek || 0) >= POLISH.perWeek || chance >= POLISH.chance) return null;

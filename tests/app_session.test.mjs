@@ -158,7 +158,7 @@ test('stars: 1 at mastery, then accuracy, speed, retention and mastery of speed;
   // Star 4 needs a gap of a week, then three clean answers.
   for (let i = 0; i < 3; i++) answer(true, ok);
   assert.equal(starsOf(prog, id), 3);
-  assert.match(nextStar(prog, id, '2026-10-03').now, /あと 5日/);
+  assert.match(nextStar(prog, id, '2026-10-03').now, /再等 5天/);
   day = 9;
   for (let i = 0; i < 3; i++) answer(true, ok);
   assert.equal(starsOf(prog, id), 4);

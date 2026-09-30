@@ -48,13 +48,14 @@ function checkAnswer(p) {
     assert.equal(Number(q), Math.floor(p.a / p.b), p.text);
     assert.equal(p.rem, p.a % p.b, p.text);
   } else {
-    const expect = p.answer.replace(/ あまり /, '').replace(/と/, '').replace('.', '');
+    // Answers are stored in the zh-canonical format: "7 余 3" and "2 1/3".
+    const expect = p.answer.replace(/ 余 /, '').replace(/ /, '').replace('.', '');
     // Fractions are typed denominator first.
-    const fr = p.answer.match(/^(?:(\d+)と)?(\d+)\/(\d+)$/);
+    const fr = p.answer.match(/^(?:(\d+) )?(\d+)\/(\d+)$/);
     const want = fr ? `${fr[1] || ''}${fr[3]}${fr[2]}` : expect;
     assert.equal(typed, want, `${p.skill} ${p.text} -> ${p.answer}`);
     const v = evalText(p.text);
-    if (v !== null && !p.answer.includes('あまり')) assert.ok(Math.abs(v - num(p.answer)) < 1e-9, `${p.skill} ${p.text} = ${p.answer}`);
+    if (v !== null && !p.answer.includes(' 余 ')) assert.ok(Math.abs(v - num(p.answer)) < 1e-9, `${p.skill} ${p.text} = ${p.answer}`);
   }
 }
 

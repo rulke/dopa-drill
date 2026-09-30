@@ -8,7 +8,7 @@ export function defaultState() {
   return {
     version: VERSION,
     guideSeen: false,
-    settings: { count: 10, sound: true, volume: 0.8, motion: null },
+    settings: { count: 10, sound: true, volume: 0.8, motion: null, lang: null },
     history: [],
   };
 }

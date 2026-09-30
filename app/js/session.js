@@ -1,11 +1,12 @@
 // Session planning (which skills to ask) and per-skill progress.
 // Pure logic over a plain progress object so it can be unit tested;
 // persistence is handled by store.js.
-import { SKILLS, SKILL, DEPTH, MASTERY, LANES, skillsOfGrade } from './skills.js';
+import { SKILLS, SKILL, DEPTH, MASTERY, LANES, skillsOfGrade, skillName } from './skills.js';
 const LANES_N = LANES.length;
 import { makeProblem, signature } from './problems.js';
 import { comboWindowMs } from './scoring.js';
 import { daysBetween } from './growth.js';
+import { t } from './i18n.js';
 
 // Skills in a single easy -> hard order (placement walks along it).
 export const ORDER = SKILLS.slice().sort((a, b) => DEPTH[a.id] - DEPTH[b.id] || a.grade - b.grade || SKILLS.indexOf(a) - SKILLS.indexOf(b)).map((s) => s.id);
@@ -169,16 +170,16 @@ export function nextStar(prog, id, today = null) {
   const pct = (l) => Math.round(rate(l) * 100);
   const cur = (l) => { const v = speedOf(l, grade); return Number.isFinite(v) ? Math.round((v * baseMs(grade, cells)) / 100) / 10 : null; };
   const n = s + 1;
-  if (n === 2) { const l = times.slice(-R.accN); return { n, text: `さいきん ${R.accN}もんの 初回正解が ${R.acc * 100}% いじょう`, now: `いま ${l.length}もん・${pct(l)}%` }; }
-  if (n === 3) { const l = times.slice(-R.speedN); const c = cur(l); return { n, text: `1もんを だいたい ${sec(1)}びょう いないで とく`, now: c == null ? `いま ${l.length}もん` : `いま ${c}びょう（${l.length}/${R.speedN}もん）` }; }
+  if (n === 2) { const l = times.slice(-R.accN); return { n, text: t('最近{n}题的一次答对率在{p}%以上', { n: R.accN, p: R.acc * 100 }), now: t('目前 {n}题 · {p}%', { n: l.length, p: pct(l) }) }; }
+  if (n === 3) { const l = times.slice(-R.speedN); const c = cur(l); return { n, text: t('每题在大约{s}秒内解出', { s: sec(1) }), now: c == null ? t('目前 {n}题', { n: l.length }) : t('目前 {s}秒（{n}/{m}题）', { s: c, n: l.length, m: R.speedN }) }; }
   if (n === 4) {
     const since = r.starDay && r.starDay[3];
     const ref = today || (times.length ? times[times.length - 1].d : since);
     const wait = since && ref ? Math.max(0, R.gapDays - daysBetween(since, ref)) : R.gapDays;
-    return { n, text: `☆3から ${R.gapDays}日 たってから、${R.holdRun}もん つづけて 初回正解`, now: wait ? `あと ${wait}日 まってね` : 'きょうから ちょうせん できるよ' };
+    return { n, text: t('☆3之后等{d}天，再连续{r}题一次答对', { d: R.gapDays, r: R.holdRun }), now: wait ? t('再等 {d}天哦', { d: wait }) : t('从今天就能挑战啦') };
   }
   const l = times.slice(-R.topN); const c = cur(l);
-  return { n, text: `さいきん ${R.topN}もんの 初回正解が ${R.top * 100}% いじょうで、1もん ${sec(R.topSpeed)}びょう いない`, now: `いま ${pct(l)}%${c == null ? '' : `・${c}びょう`}` };
+  return { n, text: t('最近{n}题一次答对率{p}%以上，且每题在{s}秒以内', { n: R.topN, p: R.top * 100, s: sec(R.topSpeed) }), now: t('目前 {p}%{s}', { p: pct(l), s: c == null ? '' : t(' · {s}秒', { s: c }) }) };
 }
 
 function noteTiming(r, firstTry, { day, ms, cells = 1, misses = 0, problem = null }, at) {

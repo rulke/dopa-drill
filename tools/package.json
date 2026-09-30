@@ -1,0 +1,17 @@
+{
+  "name": "dopa-drill-tools",
+  "version": "1.0.0",
+  "description": "Font subsetting tools for the dopa-drill app",
+  "scripts": {
+    "fonts": "node build_fonts.mjs"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@fontsource/zcool-kuaile": "^5.2.5",
+    "@fontsource/zcool-qingke-huangyou": "^5.2.5",
+    "fontkit": "^2.0.5",
+    "subset-font": "^2.4.0"
+  },
+  "private": true
+}
