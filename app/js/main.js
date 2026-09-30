@@ -139,7 +139,7 @@ const stats = () => { const st = store.load(); if (!st.stats) st.stats = growth.
 const recording = () => !S.demo && !params.has('skill') && !(S.plan && S.plan.legacy);
 
 // ---------------------------------------------------------------- daily quests (id035)
-const pickedCount = () => Number(($('.pick [aria-checked="true"]') || {}).dataset?.count || 10);
+const pickedCount = () => Number($('.count-pick [aria-checked="true"]')?.dataset.count || 10);
 function questCtx() {
   const prog = progress();
   const st = stats();
@@ -337,7 +337,7 @@ function startGame(kind = 'level', arg) {
   audio.unlock();
   S.run += 1;
   if (S.bonusOpen) { $('#bonus').hidden = true; S.bonusOpen = false; }
-  S.N = Number($('.pick [aria-checked="true"]').dataset.count);
+  S.N = pickedCount();
   S.rng = makeRng(Number(params.get('seed') || Math.floor(Math.random() * 1e9)));
   S.sessionSigs = new Set();
   S.kind = kind; S.kindArg = arg;
@@ -1593,8 +1593,13 @@ function setVolume(v, { persist = true } = {}) {
   if (persist) store.updateSettings({ volume: v });
 }
 function setCount(n, { persist = true } = {}) {
-  $$('.pick button').forEach((x) => x.setAttribute('aria-checked', String(Number(x.dataset.count) === n)));
-  if (persist) store.updateSettings({ count: n });
+  // Only 6/10/14 exist; a stale or corrupted save falls back to the default so
+  // the radiogroup always keeps exactly one checked button.
+  const counts = $$('.count-pick button').map((x) => Number(x.dataset.count));
+  const v = counts.includes(Number(n)) ? Number(n) : (counts.includes(10) ? 10 : counts[0]);
+  $$('.count-pick button').forEach((x) => x.setAttribute('aria-checked', String(Number(x.dataset.count) === v)));
+  if (persist) store.updateSettings({ count: v });
+  return v;
 }
 
 // ---------------------------------------------------------------- skill tree
@@ -2457,7 +2462,7 @@ function motionSliderFx(v) {
   }
 }
 
-$$('.pick button').forEach((b) => b.addEventListener('click', () => {
+$$('.count-pick button').forEach((b) => b.addEventListener('click', () => {
   setCount(Number(b.dataset.count));
   audio.unlock();
   audio.play('blip', audio.now(), { m: 76 + Number(b.dataset.count) / 2, v: 0.12 });

@@ -2,8 +2,13 @@
 // normalisers that rewrite problems saved by the Japanese build.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { t, setLocale, getLocale, detectLocale, fmtNum, fmtYearMonth, fmtMonthDay, has } from '../app/js/i18n.js';
 import { normText, normWord, displayAnswer } from '../app/js/problems.js';
+
+const html = readFileSync(fileURLToPath(new URL('../app/index.html', import.meta.url)), 'utf8');
+const mainJs = readFileSync(fileURLToPath(new URL('../app/js/main.js', import.meta.url)), 'utf8');
 
 test('t() returns the zh source for missing entries and translates via packs', () => {
   assert.equal(getLocale(), 'zh');
@@ -90,4 +95,22 @@ test('displayAnswer converts remainders and mixed numbers', () => {
   setLocale('en');
   assert.equal(displayAnswer('7 余 3'), '7 r 3');
   setLocale('zh');
+});
+
+// The settings dialog holds two radiogroups that share the `.pick` class, and
+// the problem-count code reads the checked button by selector. When both used
+// the bare class, clicking a language stored `count: NaN` and the next play
+// read the language button instead, leaving S.N = NaN and a blank problem card.
+test('problem count and language radiogroups never share a selector', () => {
+  assert.match(html, /class="pick count-pick"/);
+  assert.match(html, /class="pick lang-pick"/);
+  // No settings lookup may fall back to the bare `.pick` group.
+  assert.doesNotMatch(mainJs, /[$(]\$\$?\('\.pick\b(?![\w-])/);
+  assert.match(mainJs, /\.count-pick \[aria-checked="true"\]/);
+});
+
+test('setCount keeps exactly one button checked for a stale or corrupt save', () => {
+  // The clamping itself is DOM-bound, so assert the guard the fix relies on.
+  assert.match(mainJs, /const counts = \$\$?\('\.count-pick button'\)/);
+  assert.match(mainJs, /counts\.includes\(Number\(n\)\)/);
 });

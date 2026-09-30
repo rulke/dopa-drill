@@ -130,6 +130,8 @@ body.reduced .logo *, body.reduced .logo-burst { animation: none !important; }
 .reset-btn { align-self: center; min-width: 230px; font-weight: 900; }
 .modal .pick { justify-content: center; }
 .modal .pick button { width: 30%; max-width: 96px; }
+/* Language names are words rather than numbers, so they size to their text. */
+.modal .lang-pick button { width: auto; min-width: 90px; max-width: none; padding: 0 12px; font-size: 20px; }
 .slider { -webkit-appearance: none; appearance: none; width: 100%; height: 34px; background: transparent; margin: 0; --v: 1; }
 .slider::-webkit-slider-runnable-track { height: 14px; border: 2.5px solid var(--ink); border-radius: 999px; background: linear-gradient(90deg, var(--pink) 0 calc(var(--v) * 100%), #fff calc(var(--v) * 100%)); }
 .slider::-moz-range-track { height: 10px; border: 2.5px solid var(--ink); border-radius: 999px; background: linear-gradient(90deg, var(--pink) 0 calc(var(--v) * 100%), #fff calc(var(--v) * 100%)); }
