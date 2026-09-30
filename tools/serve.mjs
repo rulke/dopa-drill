@@ -18,14 +18,24 @@ createServer(async (req, res) => {
     let file = await readFile(join(dir, path));
     // ?pump=1 replaces rAF with a timer pump so the game keeps animating in
     // occluded/背景ed test tabs (dev helper only, no effect on normal play).
+    // ?trap=1 additionally records any exception thrown by a frame callback,
+    // which is how a dead animation loop gets diagnosed.
     if (path.endsWith('index.html') && url.searchParams.get('pump')) {
       const shim = `<script>(function(){
         const q = [];
         window.requestAnimationFrame = (cb) => (q.push(cb), q.length);
+        const errs = [];
+        window.__rafErrs = errs;
+        const note = (e) => {
+          if (errs.length < 30) errs.push(String((e && e.stack) || e).split('\\n').slice(0, 5).join(' | '));
+          try { localStorage.setItem('__raf_errs', JSON.stringify(errs)); } catch (x) {}
+        };
+        addEventListener('error', note);
+        addEventListener('unhandledrejection', (e) => note(e.reason));
         const pump = () => {
           const batch = q.splice(0);
           const t = performance.now();
-          batch.forEach((cb) => { try { cb(t); } catch (e) { const l = JSON.parse(localStorage.getItem('__dbg_errs') || '[]'); if (l.length < 20) { l.push(String((e && e.stack) || e).split('\\n').slice(0, 3).join(' | ')); localStorage.setItem('__dbg_errs', JSON.stringify(l)); } } });
+          batch.forEach((cb) => { try { cb(t); } catch (e) { note(e); } });
         };
         // MessageChannel tasks escape background-tab timer throttling.
         const ch = new MessageChannel();

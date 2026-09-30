@@ -114,3 +114,29 @@ test('setCount keeps exactly one button checked for a stale or corrupt save', ()
   assert.match(mainJs, /const counts = \$\$?\('\.count-pick button'\)/);
   assert.match(mainJs, /counts\.includes\(Number\(n\)\)/);
 });
+
+// `t` is the translator, so any local that rebinds the name shadows it. A
+// shadowed `t` throws a TDZ ReferenceError, which used to freeze the game
+// silently (see core.js keeping the frame loop alive).
+test('no scope rebinds the translator name t', () => {
+  const files = ['main.js', 'guide.js', 'session.js', 'problems.js', 'scoring.js', 'skills.js', 'trophies.js', 'unlocks.js', 'quests.js', 'growth.js'];
+  const binds = [
+    /\b(?:const|let|var)\s+t\s*=/,
+    /function\s*\w*\s*\([^)]*\bt\b[^)]*\)/,
+    /\(\s*[^)]*\bt\b[^)]*\)\s*=>/,
+    /for\s*\(\s*(?:const|let|var)\s+t\s+of\b/,
+    /catch\s*\(\s*t\s*\)/,
+  ];
+  for (const f of files) {
+    const src = readFileSync(fileURLToPath(new URL(`../app/js/${f}`, import.meta.url)), 'utf8');
+    const lines = src.split('\n');
+    const calls = lines.map((l, i) => [i, l]).filter(([, l]) => /(?<![A-Za-z0-9_$.'])t\s*\(/.test(l));
+    for (const [i, line] of lines.entries()) {
+      if (!binds.some((rx) => rx.test(line))) continue;
+      let end = lines.length;
+      for (let j = i + 1; j < lines.length; j++) if (/^\}/.test(lines[j])) { end = j; break; }
+      const clash = calls.find(([c]) => c > i && c < end);
+      assert.equal(clash, undefined, `${f}:${i + 1} rebinds t but calls t() at line ${clash ? clash[0] + 1 : '?'}`);
+    }
+  }
+});

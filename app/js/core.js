@@ -5,6 +5,7 @@
 const tasks = new Set();
 let last = performance.now();
 let running = false;
+let loopFailed = false;
 
 export const now = () => performance.now();
 
@@ -17,8 +18,21 @@ function loop() {
   const t = performance.now();
   const dt = Math.min(0.05, Math.max(0, (t - last) / 1000));
   last = t;
-  for (const fn of [...tasks]) fn(dt, t);
+  // A throwing callback must never stop the show: re-arm the frame first, then
+  // report the first failure. Otherwise every wait()/tween() in flight would
+  // hang forever and the game would silently freeze mid-scene.
+  for (const fn of [...tasks]) {
+    try { fn(dt, t); } catch (e) { if (!loopFailed) { loopFailed = true; reportFrameError(e); } }
+  }
   requestAnimationFrame(loop);
+}
+
+function reportFrameError(e) {
+  try { console.error('frame callback failed:', e); } catch { /* reporting must not throw */ }
+  try {
+    const l = JSON.parse(globalThis.localStorage?.getItem('__frame_errs') || '[]');
+    if (l.length < 20) { l.push(String((e && e.stack) || e).split('\n').slice(0, 4).join(' | ')); globalThis.localStorage.setItem('__frame_errs', JSON.stringify(l)); }
+  } catch { /* storage may be blocked */ }
 }
 
 export function startClock() {

@@ -1148,14 +1148,14 @@ function showResult() {
   $('#r-ok').innerHTML = `${S.solved}<small>${t('题')}</small>`;
   $('#r-ng').innerHTML = `${S.misses}<small>${t('次')}</small>`;
   $('#r-rate').textContent = `${Math.round(rate * 100)}%`;
-  const t = S.endT - S.startT;
-  $('#r-time').textContent = fmtTime(t);
+  const elapsed = S.endT - S.startT;
+  $('#r-time').textContent = fmtTime(elapsed);
   $('#r-dopa').textContent = fmtDopa(S.dopa.L);
   const review = S.plan.mode === 'review';
   const ok = rate >= 0.8 && !review;
   if (S.plan.placement && !S.demo) { progress().placed = true; store.save(); }
-  S.record = S.demo ? null : store.addRecord({ mode: S.plan.mode, grade: S.plan.grade, skill: S.plan.skill, count: S.N, score: BASIC_SCORE, ok: S.solved, ng: S.misses, firstRate: rate, timeMs: Math.round(t), dopaL: S.dopa.L });
-  if (recording()) { growth.notePlay(stats(), { mode: S.plan.mode, day: store.dayKey(), timeMs: Math.round(t), dopaL: S.dopa.L, firstRate: rate }); store.save(); }
+  S.record = S.demo ? null : store.addRecord({ mode: S.plan.mode, grade: S.plan.grade, skill: S.plan.skill, count: S.N, score: BASIC_SCORE, ok: S.solved, ng: S.misses, firstRate: rate, timeMs: Math.round(elapsed), dopaL: S.dopa.L });
+  if (recording()) { growth.notePlay(stats(), { mode: S.plan.mode, day: store.dayKey(), timeMs: Math.round(elapsed), dopaL: S.dopa.L, firstRate: rate }); store.save(); }
   questNote({ type: 'play', mode: S.plan.mode });
   $('#result-title').textContent = review ? t('复习完成') : t('{m}完成', { m: modeName(S.plan) });
   const un = $('#r-unlock');
@@ -1460,10 +1460,10 @@ function toTitle() {
 
 // ---------------------------------------------------------------- frame loop
 let lastClockText = '';
-onFrame((dt, t) => {
+onFrame((dt, ts) => {
   audio.update();
-  demoTick(t);
-  tickCombo(t);
+  demoTick(ts);
+  tickCombo(ts);
   const pulse = audio.pulse();
   const targetKick = audio.playing ? pulse.kick * (S.level >= 1 ? 1 : 0.2) : 0;
   S.kick = S.reduced ? 0 : targetKick;
@@ -1482,7 +1482,7 @@ onFrame((dt, t) => {
   if (S.screen === 'play' && !S.confirm) {
     let txt;
     if (S.mode === 'extra') {
-      const left = Math.max(0, S.extra.end - t);
+      const left = Math.max(0, S.extra.end - ts);
       txt = fmtTime(left + 999);
       $('.clock').classList.toggle('hurry', left < 10000);
       if (left < 5500 && left > 0) {
@@ -1491,7 +1491,7 @@ onFrame((dt, t) => {
       }
       if (left <= 0 && !S.extra.over) endExtra();
     } else {
-      const el = (S.endT || t) - S.startT;
+      const el = (S.endT || ts) - S.startT;
       txt = fmtTime(el);
       $('.clock').classList.toggle('over', el > S.targetMs);
       if (el > S.targetMs) $('#clock-label').textContent = t('超过目标');
@@ -1499,8 +1499,8 @@ onFrame((dt, t) => {
     if (txt !== lastClockText) { $('#clock').textContent = txt; lastClockText = txt; }
 
     // Hero wanders around the stage between actions.
-    if (!S.reduced && S.motion >= 0.35 && S.E > 0.3 && t > S.idleAt && t > S.busyUntil && !S.reach && !hero.hands.some((h) => h.job)) {
-      S.idleAt = t + rand(2200, 4200) / (0.6 + S.E);
+    if (!S.reduced && S.motion >= 0.35 && S.E > 0.3 && ts > S.idleAt && ts > S.busyUntil && !S.reach && !hero.hands.some((h) => h.job)) {
+      S.idleAt = ts + rand(2200, 4200) / (0.6 + S.E);
       const r = stage.getBoundingClientRect();
       const x = clamp(r.left + r.width / 2 + rand(-0.28, 0.28) * r.width, r.left + 50, r.right - 50);
       hero.hop(20 + 40 * S.E, 420, { to: { x, y: hero.home.y }, spin: S.E > 0.6 && chance(0.3) ? 360 : 0 }).then((ok) => { if (ok) hero.x = x; });
@@ -1532,7 +1532,7 @@ onFrame((dt, t) => {
   const hc = hero.headCenter;
   st.cx = lerp(st.cx || hc.x, S.screen === 'play' ? stage.getBoundingClientRect().left + stage.clientWidth / 2 : innerWidth / 2, Math.min(1, dt * 3));
   st.cy = lerp(st.cy || hc.y, S.screen === 'play' ? stage.getBoundingClientRect().top + stage.clientHeight * 0.55 : innerHeight * 0.4, Math.min(1, dt * 3));
-  bg.render(t);
+  bg.render(ts);
   fx.update(dt);
   fx.draw();
   fxBack.update(dt);
@@ -1542,15 +1542,15 @@ onFrame((dt, t) => {
   const ctx = { beat: S.kick };
   for (const a of actors) {
     if (a === hero && S.guideOpen && S.reduced) a.update(0, 0);
-    else a.update(dt, t, ctx);
+    else a.update(dt, ts, ctx);
   }
 });
 
 // Title screen idle performance.
-onFrame((dt, t) => {
+onFrame((dt, ts) => {
   if (S.screen !== 'title' || S.guideOpen || S.reduced || S.settingsOpen || S.confirm || S.bonusOpen || S.hammerOpen || S.trophyOpen || S.scene) return;
-  if (t > S.idleAt && t > S.busyUntil) {
-    S.idleAt = t + rand(1600, 2800);
+  if (ts > S.idleAt && ts > S.busyUntil) {
+    S.idleAt = ts + rand(1600, 2800);
     const r = $('#title-stage').getBoundingClientRect();
     const x = r.left + r.width / 2 + rand(-0.25, 0.25) * r.width;
     const roll = Math.random();
@@ -2385,10 +2385,10 @@ function openDay(key) {
   const list = store.monthSummary(y, m - 1)[key]?.entries || [];
   $('#day-title').textContent = t('{d}的记录', { d: fmtMonthDay(m, d) });
   $('#day-list').innerHTML = list.slice().reverse().map((h) => {
-    const t = new Date(h.at);
+    const at = new Date(h.at);
     const name = (MODE_NAMES[h.mode] || (() => h.mode))(h);
     const extra = h.extraOk ? t('　加时 {n}题', { n: h.extraOk }) : '';
-    return `<li><span class="t">${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}</span><span class="m">${name}</span><span class="s">${t('{n}分', { n: fmtNum(h.score || 0) })}</span><span class="d">${t('答对 {a}　差一点 {b}', { a: h.ok ?? '-', b: h.ng ?? '-' })}${extra}　${fmtTime(h.timeMs || 0)}</span></li>`;
+    return `<li><span class="t">${at.getHours()}:${String(at.getMinutes()).padStart(2, '0')}</span><span class="m">${name}</span><span class="s">${t('{n}分', { n: fmtNum(h.score || 0) })}</span><span class="d">${t('答对 {a}　差一点 {b}', { a: h.ok ?? '-', b: h.ng ?? '-' })}${extra}　${fmtTime(h.timeMs || 0)}</span></li>`;
   }).join('');
   $('#day-log').hidden = false;
   audio.unlock();
