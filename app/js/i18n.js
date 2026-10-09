@@ -62,10 +62,13 @@ export function fmtMonthDay(m, d) { // m: 1-12
   return key in ymCache ? ymCache[key] : (ymCache[key] = new Intl.DateTimeFormat(intlLocale(), { month: 'short', day: 'numeric' }).format(new Date(2024, m - 1, d)));
 }
 
-// First paint: swap the marked static text and labels for the active
-// language. Only keys the pack actually has are replaced, so the Chinese
-// markup (the source language) is left untouched.
+// Swap the marked static text and labels for the active language. Called on
+// every language change, not just the first paint: switching back to Chinese has
+// to overwrite the English or Japanese that is in the DOM by then. Assigning
+// unconditionally is safe because a key with no entry in the pack is the Chinese
+// text itself (see t's fallback) - the only keys that must be in every pack are
+// the structural ones, and app_i18n.test.mjs holds that invariant.
 export function applyDomTexts(root = document) {
-  root.querySelectorAll('[data-i18n]').forEach((el) => { if (has(el.dataset.i18n)) el.textContent = t(el.dataset.i18n); });
-  root.querySelectorAll('[data-i18n-aria]').forEach((el) => { if (has(el.dataset.i18nAria)) el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  root.querySelectorAll('[data-i18n-aria]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
 }

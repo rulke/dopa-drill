@@ -58,6 +58,32 @@ test('has() reports pack coverage for structural keys', () => {
   setLocale('zh');
 });
 
+// applyDomTexts assigns t(key) to every marked element, and t falls back to the
+// key itself. That only holds while every key that is NOT Chinese source text
+// has a zh entry - otherwise switching back to Chinese would print the raw key
+// ("grade.1") into the interface. The old code hid that behind a `has()` guard,
+// which also meant switching back to Chinese never restored anything.
+test('every data-i18n key resolves to real Chinese', async () => {
+  const { zh } = await import('../app/js/lang/zh.js');
+  for (const lang of ['en', 'ja']) {
+    const pack = (await import(`../app/js/lang/${lang}.js`))[lang];
+    for (const key of Object.keys(zh)) {
+      assert.ok(key in pack, `${lang} pack is missing the structural key "${key}"`);
+    }
+  }
+
+  // A marked element must either carry its own Chinese text, or name a key the
+  // zh pack defines. Anything else renders as the bare key.
+  const offenders = [];
+  for (const m of html.matchAll(/<([a-z0-9]+)([^>]*?)data-i18n="([^"]+)"([^>]*?)>([^<]*)</gi)) {
+    const [, tag, , key, , inner] = m;
+    const text = inner.trim();
+    if (!text) continue;                 // filled in by a script after load
+    if (!(key in zh) && text !== key) offenders.push(`<${tag} data-i18n="${key}">${text}`);
+  }
+  assert.deepEqual(offenders, [], `key is neither the Chinese text nor in the zh pack: ${offenders.join(', ')}`);
+});
+
 test('normText rewrites legacy Japanese wording for display', () => {
   setLocale('zh');
   assert.equal(normText('たしざん'), '加法');

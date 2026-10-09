@@ -26,11 +26,35 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 // Language: the saved choice wins; otherwise Japanese browsers keep
 // Japanese and everything else defaults to Chinese.
 setLocale(store.settings().lang || detectLocale(navigator.language || ''));
-document.documentElement.lang = getLocale();
-document.title = t('多巴胺口算');
-$('.logo').setAttribute('aria-label', t('多巴胺口算'));
-applyDomTexts();
-buildLogo();
+
+// Everything the language pack drives that is not in the markup: the document
+// language (which also swaps the font family), the tab title, the logo's
+// accessible name and the logo characters themselves. Kept in one function so
+// switching language mid-session can reapply it in place instead of reloading.
+function applyStaticTexts() {
+  document.documentElement.lang = getLocale();
+  document.title = t('多巴胺口算');
+  $('.logo').setAttribute('aria-label', t('多巴胺口算'));
+  applyDomTexts();
+  buildLogo();
+}
+applyStaticTexts();
+
+// Swap the language in place. Reloading would work, but it drops the player back
+// on the title screen and re-fetches every module - which reads as a crash next
+// to the count picker, where the same kind of choice updates quietly.
+function switchLocale(lang) {
+  if (!lang || lang === getLocale()) return false;
+  setLocale(lang);
+  store.updateSettings({ lang });
+  applyStaticTexts();
+  $$('.lang-pick button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.lang === getLocale())));
+  // Copy that is generated rather than in the markup - the level hint, quest
+  // names, month headings - has to be rebuilt by the screens that render it.
+  renderCalendar();
+  refreshTitle();
+  return true;
+}
 
 const capture = params.has('capture');
 const EXTRA_MS = Number(params.get('extra') || 90) * 1000;
@@ -2523,11 +2547,10 @@ $$('.count-pick button').forEach((b) => b.addEventListener('click', () => {
   if (!S.reduced) hero.hop(20 + Number(b.dataset.count) * 2 * S.motion, 320, { audio });
 }));
 $$('.lang-pick button').forEach((b) => b.addEventListener('click', () => {
-  if (b.dataset.lang === getLocale()) return;
+  if (!switchLocale(b.dataset.lang)) return;
   audio.unlock();
   audio.play('unit', audio.now(), { v: 0.12 });
-  store.updateSettings({ lang: b.dataset.lang });
-  location.reload();
+  if (!S.reduced) hero.hop(24, 340, { audio });
 }));
 $('#start').addEventListener('click', () => startGame('level'));
 $('#quest-list').addEventListener('click', (e) => { const li = e.target.closest('li.go'); if (li && SKILL[li.dataset.skill]) { audio.unlock(); audio.play('blip', audio.now(), { m: 84, v: 0.12 }); startGame('practice', li.dataset.skill); } });
@@ -2565,6 +2588,14 @@ $('#volume').addEventListener('input', (e) => { audio.unlock(); const v = e.targ
 $('#motion').addEventListener('input', (e) => { const v = e.target.value / 100; setMotion(v); motionSliderFx(v); });
 $('#motion').addEventListener('change', () => { S.previewE = 0.04 + 0.3 * S.motion; });
 $('#mute').addEventListener('click', () => setMuted(!S.muted));
+// Leaving mid-round goes through the same confirmation as Escape, so a mis-tap
+// cannot throw away a round in progress.
+$('#play-back').addEventListener('click', () => {
+  if (S.scene || S.confirm) return;
+  audio.unlock();
+  audio.play('blip', audio.now(), { m: 72, v: 0.08 });
+  askToTitle();
+});
 $('#go-extra').addEventListener('click', startExtra);
 $('#go-title').addEventListener('click', toTitle);
 $('#go-again').addEventListener('click', () => startGame(S.kind, S.kindArg));

@@ -163,10 +163,19 @@ body.reduced .logo *, body.reduced .logo-burst { animation: none !important; }
 .toggle b { font-weight: 900; color: var(--blue); }
 .toggle[aria-pressed="true"][data-toggle="motion"] b { color: var(--pink); }
 .hint { margin: 0; font-size: 12px; opacity: .6; }
+/* A phone has no number keys and no Backspace, so the hint is only noise there.
+   Keyed on the pointing device rather than the width: a tablet with a keyboard
+   still gets it, a small laptop still gets it. */
+@media (hover: none) and (pointer: coarse) { .hint { display: none; } }
 
 /* ------------------------------------------------------------ play */
 #screen-play { flex-direction: column; padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); }
-.hud { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; }
+.hud-back { font-size: 26px; font-weight: 900; line-height: 1; }
+/* The demo plays itself; there is no round of the player's to back out of. */
+body.demo .hud-back { display: none; }
+/* min-height, not height: on a 320px-wide phone the pips wrap to three rows,
+   and a fixed bar would let them spill over the tally row underneath. */
+.hud { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 14px; }
 .pips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; align-items: center; }
 .pip { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--ink); background: #fff; }
 .pips.many .pip { width: 11px; height: 11px; border-width: 2px; }
