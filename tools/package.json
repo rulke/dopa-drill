@@ -1,16 +1,18 @@
 {
   "name": "dopa-drill-tools",
   "version": "1.0.0",
-  "description": "Font subsetting tools for the dopa-drill app",
+  "description": "Font subsetting and icon rasterising tools for the dopa-drill app",
   "scripts": {
-    "fonts": "node build_fonts.mjs"
+    "fonts": "node build_fonts.mjs",
+    "icons": "node build_icons.mjs"
   },
   "license": "MIT",
   "type": "module",
   "dependencies": {
     "@fontsource/zcool-kuaile": "^5.2.5",
     "@fontsource/zcool-qingke-huangyou": "^5.2.5",
-    "fontkit": "^2.0.5",
+    "@resvg/resvg-js": "^2.6.2",
+    "fontkit": "^2.0.4",
     "subset-font": "^2.4.0"
   },
   "private": true

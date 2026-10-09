@@ -7,6 +7,15 @@
   <meta name="description" content="每解一道算数题，特效和音乐就跟着升级的口算练习。">
   <title>多巴胺口算</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <!-- iOS reads these instead of the manifest: the standalone flag is what
+       drops Safari's chrome, and the status bar style has to match the light
+       paper background or the clock is unreadable. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="多巴胺口算">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="js/main.js"></script>
 </head>

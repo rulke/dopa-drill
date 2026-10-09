@@ -2691,5 +2691,16 @@ layoutActors();
 // background; without this the music stays dead until the next tap.
 const wakeAudio = () => { if (document.visibilityState === 'visible') audio.resume(); };
 document.addEventListener('visibilitychange', wakeAudio);
+
+// Offline shell. Off by default on a local server: a worker serving cached
+// files hides every edit, and the ?pump/?capture harnesses load modules by URL.
+// Add ?sw=1 to a localhost URL to test the offline path, and note that
+// registration failures are not fatal - the game runs fine online without it,
+// and there is no serviceWorker at all on file://.
+const localHost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')
+  && (!localHost || params.has('sw')) && !params.has('capture')) {
+  addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 addEventListener('pageshow', wakeAudio);
 Object.assign(window.__dopa, { hanamaru, applyLook, fx, fxBack, bg, hero, actors, crowd, press, startGame, startExtra, fmtDopa, store, progress, stats, quests, trophyState, checkTrophies });
