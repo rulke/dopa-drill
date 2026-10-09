@@ -45,7 +45,7 @@ node tools/serve.mjs 8000 app
   `apple-touch-icon` 和 `apple-mobile-web-app-*` 这几个 meta 标签。
 
 装好后是全屏无地址栏的独立应用，**完全离线可玩**：`app/sw.js` 会把
-`app/` 下的全部 41 个文件预缓存下来（含 5 个字体的子集）。发布新版本时
+33 个运行时文件预缓存下来（含 5 个字体的子集）。发布新版本时
 **必须改 `sw.js` 里的 `CACHE_VERSION`**，否则设备会继续用旧缓存——这是
 唯一需要人工记住的一步。
 

@@ -46,9 +46,10 @@ static host (Cloudflare Pages, GitHub Pages - HTTPS required).
   the `apple-touch-icon` and `apple-mobile-web-app-*` meta tags instead.
 
 Installed, it runs full screen with no address bar and works **entirely
-offline**: `app/sw.js` precaches all 41 files under `app/`, the five subset
-fonts included. When you ship a release you **must bump `CACHE_VERSION` in
-`sw.js`**, or devices keep serving the old cache. That is the one manual step.
+offline**: `app/sw.js` precaches the 33 runtime files under `app/`, the five
+subset fonts included. When you ship a release you **must bump `CACHE_VERSION`
+in `sw.js`**, or devices keep serving the old cache. That is the one manual
+step.
 
 The clock in `app/js/core.js` stops while the page is hidden, so locking the
 phone or switching apps does not run the timer on; Android's back button unwinds
