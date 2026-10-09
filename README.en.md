@@ -35,6 +35,37 @@ On Windows, `python -m http.server` may serve `.js` as `text/plain`, which block
 node tools/serve.mjs 8000 app
 ```
 
+## Installing on a phone or tablet
+
+The game is a plain installable PWA with no build step. Serve `app/` from any
+static host (Cloudflare Pages, GitHub Pages - HTTPS required).
+
+- **Android / desktop Chrome**: an install entry appears in the address bar or
+  the menu.
+- **iOS Safari**: Share → Add to Home Screen. iOS ignores the manifest and uses
+  the `apple-touch-icon` and `apple-mobile-web-app-*` meta tags instead.
+
+Installed, it runs full screen with no address bar and works **entirely
+offline**: `app/sw.js` precaches all 41 files under `app/`, the five subset
+fonts included. When you ship a release you **must bump `CACHE_VERSION` in
+`sw.js`**, or devices keep serving the old cache. That is the one manual step.
+
+The clock in `app/js/core.js` stops while the page is hidden, so locking the
+phone or switching apps does not run the timer on; Android's back button unwinds
+one layer of UI at a time instead of closing the game.
+
+### Native builds for the app stores
+
+`mobile/` is a Capacitor shell whose `webDir` points at `../app`, so the same
+game files are copied into the native project without a line of the game being
+changed. Worth it for store distribution, or for iOS storage that the system
+will not reclaim (iOS clears a PWA's local data after it has not been opened for
+a while; an app container is not subject to that).
+
+See [mobile/README.md](mobile/README.md) and
+[mobile/IOS-AUDIO.md](mobile/IOS-AUDIO.md) - iOS silences Web Audio when the
+ringer switch is off, and only native code can override that.
+
 ## Tests
 
 Requires Node.js 20+.
@@ -49,11 +80,15 @@ node --test tests/*.test.mjs
 | --- | --- |
 | `app/` | The game (dependency-free ES Modules) |
 | `app/js/i18n.js`, `app/js/lang/` | i18n core and the zh/en/ja packs |
+| `app/manifest.webmanifest`, `app/sw.js` | PWA manifest and offline precache |
+| `app/icons/` | Home screen icons, generated from `app/icon.svg` by `tools/build_icons.mjs` |
 | `docs/SPEC.md` | Specification (Chinese); `SPEC.ja.md` is the Japanese original |
 | `docs/curriculum.md` | Curriculum and skill tree design (Chinese); `curriculum.ja.md` is the Japanese original |
 | `docs/dopakichi.svg` | The original Dopakichi artwork |
+| `mobile/` | The Capacitor shell (not used by the web build) |
 | `tests/` | Unit tests |
 | `tools/build_fonts.mjs` | Regenerates the subset fonts after UI wording changes |
+| `tools/build_icons.mjs` | Rasterises the icon sizes from `app/icon.svg` |
 | `tools/check-i18n.mjs` | Audits the language packs for missing keys |
 | `tools/serve.mjs` | Local static server with correct MIME types |
 

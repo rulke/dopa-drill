@@ -35,6 +35,33 @@ Windows 下如果 `python -m http.server` 把 `.js` 发成 `text/plain` 导致�
 node tools/serve.mjs 8000 app
 ```
 
+## 装到手机和平板上
+
+游戏本身就是一个可直接安装的 PWA，不需要构建步骤。用任意静态服务器托管
+`app/` 目录即可（例如 Cloudflare Pages、GitHub Pages，注意必须 HTTPS）。
+
+- **Android / 桌面 Chrome**：地址栏或菜单里会出现"安装"入口。
+- **iOS Safari**：分享 → 添加到主屏幕。iOS 不读 manifest，用的是
+  `apple-touch-icon` 和 `apple-mobile-web-app-*` 这几个 meta 标签。
+
+装好后是全屏无地址栏的独立应用，**完全离线可玩**：`app/sw.js` 会把
+`app/` 下的全部 41 个文件预缓存下来（含 5 个字体的子集）。发布新版本时
+**必须改 `sw.js` 里的 `CACHE_VERSION`**，否则设备会继续用旧缓存——这是
+唯一需要人工记住的一步。
+
+`app/js/core.js` 的时钟会在页面隐藏时暂停，所以锁屏或切到其他应用不会让
+计时跑掉；Android 的返回键会逐层关闭界面，而不是直接退出游戏。
+
+### 打成应用商店的原生包
+
+`mobile/` 是用 Capacitor 包的壳，`webDir` 指向 `../app`，同一份游戏代码
+复制进原生工程，不改一行。适合需要上架、或需要 iOS 上不被系统回收存档的
+场景（iOS 会清理长期未打开的 PWA 本地数据，原生容器不会）。
+
+见 [mobile/README.md](mobile/README.md) 和
+[mobile/IOS-AUDIO.md](mobile/IOS-AUDIO.md)（iOS 静音拨片会掐掉 Web Audio，
+必须用原生代码改音频会话）。
+
 ## 测试
 
 需要 Node.js 20 或更高版本。
@@ -49,11 +76,15 @@ node --test tests/*.test.mjs
 | --- | --- |
 | `app/` | 游戏本体（无依赖的 ES Modules） |
 | `app/js/i18n.js`、`app/js/lang/` | 国际化核心与 zh/en/ja 语言包 |
+| `app/manifest.webmanifest`、`app/sw.js` | PWA 清单与离线预缓存 |
+| `app/icons/` | 主屏图标（由 `tools/build_icons.mjs` 从 `app/icon.svg` 生成） |
 | `docs/SPEC.md` | 说明书（中文）；`SPEC.ja.md` 为日文版 |
 | `docs/curriculum.md` | 各年级课程与技能树设计（中文）；`curriculum.ja.md` 为日文版 |
 | `docs/dopakichi.svg` | 多巴奇造型的原稿 |
+| `mobile/` | Capacitor 原生壳（不参与 web 版本运行） |
 | `tests/` | 单元测试 |
 | `tools/build_fonts.mjs` | 重新生成界面用字体子集（修改界面文字后运行） |
+| `tools/build_icons.mjs` | 从 `app/icon.svg` 生成各尺寸 PNG 图标 |
 | `tools/check-i18n.mjs` | 校验语言包完整性的审计脚本 |
 | `tools/serve.mjs` | 带正确 MIME 的本地静态服务器 |
 

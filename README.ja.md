@@ -33,6 +33,39 @@ python3 -m http.server 8000 --bind 0.0.0.0
 node tools/serve.mjs 8000 app
 ```
 
+## スマホ・タブレットへのインストール
+
+ゲーム自体がインストール可能なPWAで、ビルド手順はありません。`app/` を任意の
+静的ホスティングに置くだけです（Cloudflare Pages、GitHub Pages など。HTTPS が
+必要です）。
+
+- **Android / デスクトップ Chrome**：アドレスバーかメニューにインストール
+  入口が出ます。
+- **iOS Safari**：共有 → ホーム画面に追加。iOS は manifest を読まず、
+  `apple-touch-icon` と `apple-mobile-web-app-*` のメタタグを使います。
+
+インストール後はアドレスバーのない全画面アプリになり、**完全にオフラインで
+遊べます**。`app/sw.js` が `app/` 以下の41ファイル（5つのサブセットフォント
+を含む）を先読みキャッシュします。**リリース時は `sw.js` の
+`CACHE_VERSION` を必ず上げてください**。上げ忘れると端末は古いキャッシュを
+使い続けます。手作業が必要なのはここだけです。
+
+`app/js/core.js` の時計はページが隠れている間止まるので、画面ロックや
+アプリ切り替えで計測が進んでしまうことはありません。Android の戻るボタンは
+UIを1層ずつ閉じ、いきなりゲームを終了しません。
+
+### アプリストア向けのネイティブビルド
+
+`mobile/` は Capacitor のシェルで、`webDir` は `../app` を指します。同じ
+ゲームコードがそのままネイティブプロジェクトにコピーされ、ゲーム側の変更は
+不要です。ストア配信が必要な場合や、iOS でシステムに消されない保存領域が
+必要な場合（iOS は長期間開いていない PWA のローカルデータを回収しますが、
+アプリコンテナは対象外です）に使います。
+
+[mobile/README.md](mobile/README.md) と [mobile/IOS-AUDIO.md](mobile/IOS-AUDIO.md)
+を参照してください。iOS は消音スイッチが入っていると Web Audio を鳴らさず、
+これを解除できるのはネイティブコードだけです。
+
 ## テスト
 
 Node.js 20以上で実行します。
@@ -47,11 +80,15 @@ node --test tests/*.test.mjs
 | --- | --- |
 | `app/` | ゲーム本体（依存ライブラリなしのES Modules） |
 | `app/js/i18n.js`、`app/js/lang/` | 国際化コアと zh/en/ja の言語パック |
+| `app/manifest.webmanifest`、`app/sw.js` | PWAマニフェストとオフライン先読み |
+| `app/icons/` | ホーム画面アイコン（`tools/build_icons.mjs` が `app/icon.svg` から生成） |
 | `docs/SPEC.md` | 仕様書（中国語）。`SPEC.ja.md` は日本語版 |
 | `docs/curriculum.md` | 学年別カリキュラムとスキルツリーの設計（中国語）。`curriculum.ja.md` は日本語版 |
 | `docs/dopakichi.svg` | ドパキチの造形の原典 |
+| `mobile/` | Capacitor のネイティブシェル（Web版の動作には関与しません） |
 | `tests/` | 単体テスト |
 | `tools/build_fonts.mjs` | フォントのサブセット再生成（画面の文言を追加したときに実行） |
+| `tools/build_icons.mjs` | `app/icon.svg` から各サイズのPNGアイコンを生成 |
 | `tools/check-i18n.mjs` | 言語パックの不足キー検査 |
 | `tools/serve.mjs` | MIMEを正しく返すローカル静的サーバー |
 
