@@ -2697,8 +2697,13 @@ document.addEventListener('visibilitychange', wakeAudio);
 // Add ?sw=1 to a localhost URL to test the offline path, and note that
 // registration failures are not fatal - the game runs fine online without it,
 // and there is no serviceWorker at all on file://.
+//
+// The native shell is excluded on purpose: Capacitor serves the files from the
+// app bundle, so a worker would only add a second cache that survives an
+// update and serves the previous build.
+const nativeShell = !!globalThis.Capacitor;
 const localHost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !nativeShell
   && (!localHost || params.has('sw')) && !params.has('capture')) {
   addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 }

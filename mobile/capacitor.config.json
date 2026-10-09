@@ -1,0 +1,15 @@
+{
+  "appId": "com.rulke.dopadrill",
+  "appName": "多巴胺口算",
+  "webDir": "../app",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "contentInset": "never",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": false
+  }
+}
