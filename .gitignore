@@ -8,3 +8,7 @@ node_modules/
 # `npx cap sync` from app/; only capacitor.config.json belongs in the repo.
 mobile/android/
 mobile/ios/
+
+# Release artifacts built by tools/package_release.py. They are attached to a
+# GitHub release, never committed: the APK alone is 4.5 MB of binary.
+dist/
