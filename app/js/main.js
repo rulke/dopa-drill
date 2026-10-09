@@ -1,6 +1,6 @@
 // Game flow, input, scoring, and the "director" that turns every event into
 // escalating visuals and sound.
-import { startClock, onFrame, wait, tween, clamp, lerp, rand, pick, chance, centerOf, params,
+import { startClock, onFrame, wait, tween, clamp, lerp, rand, pick, chance, centerOf, params, now,
   easeOutBack, easeOutCubic, easeInCubic, easeInOutCubic, easeOutQuint } from './core.js';
 import { makeRng, generate, makeProblem, signature, BASIC_SETS, EXTRA_TIERS } from './problems.js';
 import { AudioEngine } from './audio.js';
@@ -73,7 +73,6 @@ function openGuide(help = false) {
 
 // ---------------------------------------------------------------- utilities
 const fmtTime = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const now = () => performance.now();
 
 function setLevelClasses(L) {
   for (let i = 0; i <= 10; i++) body.classList.toggle(`lv${i}`, i <= L);
@@ -545,11 +544,11 @@ function onCorrect(st, cell, last) {
   }
   if (!last) {
     audio.correct(S.combo, E);
-    if (!S.reduced && performance.now() > S.busyUntil) {
+    if (!S.reduced && now() > S.busyUntil) {
       hero.earL.kick(500); hero.earR.kick(500);
       hero.setFace('happy', E > 0.4 ? 'grin' : 'cat');
       setTimeout(() => hero.resetFace(), 380);
-      if (E > 0.3 && chance(0.6)) { S.busyUntil = performance.now() + 450; hero.hop(14 + 30 * E, 300, { audio }); }
+      if (E > 0.3 && chance(0.6)) { S.busyUntil = now() + 450; hero.hop(14 + 30 * E, 300, { audio }); }
     }
     crowd.forEach((m) => { if (chance(0.7)) m.hop(18 + rand(0, 20), 300); });
   }
@@ -569,7 +568,7 @@ function onWrong(cell, st) {
   setTimeout(() => {
     fx.burst(h.x, h.y - 20, { count: 10, kinds: ['star'], speed: 220, up: 60 });
     fx.ring(h.x, h.y, { color: '#fff', radius: 60, width: 7 });
-    S.busyUntil = performance.now() + 900;
+    S.busyUntil = now() + 900;
     hero.hurt(E, c, { audio });
     if (E > 0.5) { S.shake = Math.max(S.shake, 8); S.flash = Math.max(S.flash, 0.12); }
     crowd.forEach((m) => { m.setFace('wide', 'o'); m.sq.kick(-3); setTimeout(() => m.resetFace(), 600); });
@@ -693,7 +692,7 @@ function celebrate(E, big, lastBasic) {
   const r = card.getBoundingClientRect();
   const cx = r.left + r.width / 2; const cy = r.top + r.height * 0.4;
   const W = innerWidth; const H = innerHeight;
-  S.busyUntil = performance.now() + 900;
+  S.busyUntil = now() + 900;
   if (S.reduced) { hero.setFace('happy', 'grin'); setTimeout(() => hero.resetFace(), 700); return; }
   hero.celebrate(Math.min(1, E), { big: E > 0.5 || big, audio });
   crowd.forEach((m, i) => setTimeout(() => m.celebrate(Math.min(1, E), { big: E > 0.8 }), 60 * i));
@@ -1464,6 +1463,7 @@ onFrame((dt, ts) => {
   audio.update();
   demoTick(ts);
   tickCombo(ts);
+  syncBack();
   const pulse = audio.pulse();
   const targetKick = audio.playing ? pulse.kick * (S.level >= 1 ? 1 : 0.2) : 0;
   S.kick = S.reduced ? 0 : targetKick;
@@ -1873,6 +1873,60 @@ function askToTitle() {
     focusBack: document.activeElement && document.activeElement !== document.body ? document.activeElement : null,
   });
 }
+
+// ------------------------------------------------------- the back gesture
+// Android's back button and a browser back swipe both arrive as history
+// navigation, and without an entry to consume, an installed app closes on the
+// first press - mid-round, with the score gone. One spare entry is kept on the
+// stack whenever a layer is open; a press consumes it and runs the same cascade
+// as Escape, then the stack re-arms for the next press.
+//
+// The spare is identified by history.state rather than by a local flag: pushes
+// and pops are asynchronous, so a flag drifts out of sync with the real stack
+// and the app walks itself out of the document.
+const SPARE = { dopa: 1 };
+const spareArmed = () => !!(history.state && history.state.dopa === 1);
+
+const layerOpen = () => S.guideOpen || S.demo || S.settingsOpen || S.confirm || S.bonusOpen
+  || S.hammerOpen || S.trophyOpen || S.skillInfo || !$('#day-log').hidden || S.screen !== 'title';
+
+// Close the topmost layer; true when something was closed.
+function backOnce() {
+  if (guide.active) { guide.close(); return true; }
+  if (S.demo) { stopDemo(); return true; }
+  if (S.settingsOpen) { closeSettings(); return true; }
+  if (S.confirm) { closeConfirm(); return true; }
+  if (S.bonusOpen) { closeBonus(); return true; }
+  if (S.hammerOpen) { closeHammer(false); return true; }
+  if (S.trophyOpen) { closeTrophies(); return true; }
+  if (S.skillInfo) { closeSkillInfo(); return true; }
+  if (S.scene) return true;
+  if (!$('#day-log').hidden) { $('#day-log').hidden = true; return true; }
+  if (S.screen !== 'title') { askToTitle(); return true; }
+  return false;
+}
+
+// Called every frame: it only ever nudges the stack toward the state the UI is
+// actually in, so a missed or doubled event corrects itself on the next frame.
+// pushState is synchronous, but history.back() is not, so a drop in flight has
+// to be gated - without the gate the loop pops once per frame and walks the app
+// right out of the document.
+let dropping = false;
+function syncBack() {
+  if (dropping) return;
+  const open = layerOpen();
+  if (open && !spareArmed()) history.pushState(SPARE, '');
+  else if (!open && spareArmed()) { dropping = true; history.back(); }
+}
+addEventListener('popstate', () => {
+  if (dropping) { dropping = false; return; }
+  // A forward navigation lands back ON the spare; only a press moves below it.
+  if (spareArmed()) return;
+  // Closing a layer usually leaves more open, and the frame loop re-arms before
+  // the player can press again. At the title with nothing open the press stands
+  // and the platform closes the app, which is what it should do there.
+  backOnce();
+});
 
 let toastTimer = 0;
 function toast(msg) {
@@ -2453,8 +2507,8 @@ function motionSliderFx(v) {
   if (v > 0.5) fx.ring(x, y, { color: v > 0.85 ? '#ffd23f' : '#ff7ab6', radius: 20 + 50 * v, width: 5 });
   S.shake = Math.max(S.shake, 6 * v * v);
   if (v > 0.9) S.flash = Math.max(S.flash, 0.25);
-  if (performance.now() > S.busyUntil) {
-    S.busyUntil = performance.now() + 260 + 200 * v;
+  if (now() > S.busyUntil) {
+    S.busyUntil = now() + 260 + 200 * v;
     hero.setFace(v > 0.7 ? 'star' : 'happy', v > 0.5 ? 'grin' : 'cat');
     setTimeout(() => hero.resetFace(), 420);
     if (v > 0.8) hero.hop(30 + 50 * v, 420, { spin: 360, audio });
@@ -2632,4 +2686,10 @@ applyLevel(0.02);
 startClock();
 document.fonts.ready.then(layoutActors);
 layoutActors();
+
+// Mobile browsers suspend the audio context when the app goes to the
+// background; without this the music stays dead until the next tap.
+const wakeAudio = () => { if (document.visibilityState === 'visible') audio.resume(); };
+document.addEventListener('visibilitychange', wakeAudio);
+addEventListener('pageshow', wakeAudio);
 Object.assign(window.__dopa, { hanamaru, applyLook, fx, fxBack, bg, hero, actors, crowd, press, startGame, startExtra, fmtDopa, store, progress, stats, quests, trophyState, checkTrophies });

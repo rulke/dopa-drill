@@ -1,7 +1,7 @@
 // Dopakichi: a rubber-hose mascot drawn as layered SVG in screen space.
 // Shapes follow docs/dopakichi.svg, converted to unit space (feet at y=0).
 // Body parts are springs; actions are cancellable async routines.
-import { Spring, tween, wait, lerp, clamp, rand, pick, quadPoint, easeOutQuad, easeInQuad, easeOutBack, easeInOutCubic, easeOutCubic, onFrame } from './core.js';
+import { Spring, tween, wait, lerp, clamp, rand, pick, quadPoint, easeOutQuad, easeInQuad, easeOutBack, easeInOutCubic, easeOutCubic, onFrame, now } from './core.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 export const INK = '#000';
@@ -125,7 +125,7 @@ export class Dopakichi {
     this.look = { x: 0, y: 0 }; this.lookTarget = { x: 0, y: 0 };
     this.eyes = null; this.mouth = null;
     this.baseEyes = 'open'; this.baseMouth = 'smile';
-    this.blinkAt = performance.now() + 1800; this.blinkK = 0;
+    this.blinkAt = now() + 1800; this.blinkK = 0;
     this.browLift = new Spring(0, 220, 14);
     this.browTilt = new Spring(0, 220, 14);
     this.cheekPuff = 0;

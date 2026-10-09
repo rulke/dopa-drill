@@ -65,10 +65,12 @@ button:focus-visible { outline: 4px solid var(--yellow); outline-offset: 3px; }
 
 #app {
   position: relative; z-index: 2;
-  width: min(100vw, 460px); height: 100dvh; max-height: 980px;
+  /* vh first: iOS before 15.4 drops the whole 100dvh declaration and the
+     layout would collapse to auto height. */
+  width: min(100vw, 460px); height: 100vh; height: 100dvh; max-height: 980px;
   margin: 0 auto;
 }
-@media (min-height: 980px) { #app { top: calc((100dvh - 980px) / 2); } }
+@media (min-height: 980px) { #app { top: calc((100vh - 980px) / 2); top: calc((100dvh - 980px) / 2); } }
 .screen { position: absolute; inset: 0; display: none; }
 .screen.is-active { display: flex; }
 
@@ -293,7 +295,7 @@ body.lv9 .card { box-shadow: 0 7px 0 var(--ink), 0 0 0 5px var(--pink), 0 0 40px
 
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; padding: 0 14px; }
 .pad button {
-  position: relative; height: clamp(50px, 7.4dvh, 62px); border: 3px solid var(--ink); border-radius: 18px; background: #fff;
+  position: relative; height: clamp(50px, 7.4vh, 62px); height: clamp(50px, 7.4dvh, 62px); border: 3px solid var(--ink); border-radius: 18px; background: #fff;
   font-family: var(--round); font-weight: 900; font-size: 30px; box-shadow: 0 5px 0 var(--ink);
   transform: translateY(calc(var(--kick) * -2px * var(--bounce, 0)));
 }
@@ -344,7 +346,7 @@ body.lv8 .pad button { box-shadow: 0 5px 0 var(--ink), 0 0 calc(var(--kick) * 18
 body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced .pip.now, body.reduced .cell.input.active { animation: none !important; }
 @media (max-height: 840px) {
   /* Include toolbar-reduced phone heights and leave room for the bottom safe area. */
-  .sheet-wrap { min-height: clamp(96px, calc(100dvh - 490px - env(safe-area-inset-bottom)), 176px); }
+  .sheet-wrap { min-height: clamp(96px, calc(100vh - 490px - env(safe-area-inset-bottom)), 176px); min-height: clamp(96px, calc(100dvh - 490px - env(safe-area-inset-bottom)), 176px); }
   #screen-play .card { padding-block: 8px; margin-bottom: 10px; }
   .pad { gap: 6px; }
   .pad button { height: 48px; }

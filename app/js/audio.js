@@ -509,6 +509,14 @@ export class AudioEngine {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
+  // Coming back from the background: mobile browsers suspend the context, and
+  // the sequencer's next note is far in the past. update() resyncs nextTime on
+  // its own, this just gets the graph running again.
+  resume() {
+    if (this.capture || !this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+
   now() { return this.capture ? performance.now() / 1000 : (this.ctx ? this.ctx.currentTime : performance.now() / 1000); }
 
   play(name, when, p = {}) {

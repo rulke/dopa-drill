@@ -3,11 +3,41 @@
 // whole show can be captured deterministically with a virtual clock.
 
 const tasks = new Set();
-let last = performance.now();
+let last = 0;
 let running = false;
 let loopFailed = false;
 
-export const now = () => performance.now();
+// Wall time keeps running while the page is hidden, requestAnimationFrame does
+// not: a phone that locked mid-round used to come back to a stopwatch that had
+// jumped several minutes, an extra-stage clock that had already expired and a
+// combo that had quietly died. Every clock the game reads goes through now(),
+// which drops the spans spent hidden, so a round resumes exactly where it stopped.
+let hiddenAt = 0;
+let hiddenTotal = 0;
+
+export function now() {
+  return (hiddenAt || performance.now()) - hiddenTotal;
+}
+
+// Both signals are wired up: visibilitychange covers tab switches and every
+// modern mobile browser, while pagehide/pageshow also catch the older WebViews
+// and bfcache restores that never report a visibility change.
+function setHidden(hidden) {
+  const raw = performance.now();
+  if (hidden) { if (!hiddenAt) hiddenAt = raw; return; }
+  if (!hiddenAt) return;
+  hiddenTotal += raw - hiddenAt;
+  hiddenAt = 0;
+  // The gap is not a frame: leave dt at zero so the first frame back does not
+  // lurch every spring and tween by the length of the pause.
+  last = now();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => setHidden(document.visibilityState !== 'visible'));
+  addEventListener('pagehide', () => setHidden(true));
+  addEventListener('pageshow', () => setHidden(false));
+}
 
 export function onFrame(fn) {
   tasks.add(fn);
@@ -15,7 +45,7 @@ export function onFrame(fn) {
 }
 
 function loop() {
-  const t = performance.now();
+  const t = now();
   const dt = Math.min(0.05, Math.max(0, (t - last) / 1000));
   last = t;
   // A throwing callback must never stop the show: re-arm the frame first, then
@@ -38,13 +68,13 @@ function reportFrameError(e) {
 export function startClock() {
   if (running) return;
   running = true;
-  last = performance.now();
+  last = now();
   requestAnimationFrame(loop);
 }
 
 export function wait(ms) {
   return new Promise((resolve) => {
-    const end = performance.now() + ms;
+    const end = now() + ms;
     const off = onFrame((dt, t) => {
       if (t >= end) { off(); resolve(); }
     });
@@ -53,7 +83,7 @@ export function wait(ms) {
 
 export function tween(duration, fn, ease = easeOutCubic) {
   return new Promise((resolve) => {
-    const t0 = performance.now();
+    const t0 = now();
     fn(ease(0), 0);
     const off = onFrame((dt, t) => {
       const k = duration <= 0 ? 1 : Math.min(1, (t - t0) / duration);
