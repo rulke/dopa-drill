@@ -20,6 +20,7 @@ import { trophyName, trophyDesc, seriesTitle } from './trophies.js';
 import * as ul from './unlocks.js';
 import * as slips from './slips.js';
 import * as report from './report.js';
+import * as endless from './endless.js';
 import { BASIC_SCORE, extraPoints, basicDopaL, extraProblemGain, addDopa, comboMult, comboMaxed, comboWindowMs, comboMilestone, fmtDopa, unitOf, unitLabel } from './scoring.js';
 
 const $ = (s) => document.querySelector(s);
@@ -161,7 +162,9 @@ function layoutActors() {
     if (!card) return;
     r = card.getBoundingClientRect();
   }
-  const onCard = S.screen === 'result' || S.screen === 'final';
+  // Screens whose result card fills the height: the hero stands on its top edge,
+  // not at the bottom, which is where the buttons live.
+  const onCard = S.screen === 'result' || S.screen === 'final' || S.screen === 'endless';
   const scale = S.screen === 'title' ? clamp(r.height / 190, 0.7, 1.1) : onCard ? 0.6 : clamp(r.height / 175, 0.5, 0.74);
   hero.S = scale;
   const x = r.left + r.width / 2;
@@ -257,6 +260,7 @@ const modeLabelText = (plan) => (typeof MODE_LABEL[plan.mode] === 'function' ? M
 // kind: 'level' | 'grade' | 'review' | 'practice' | 'drill'
 function makePlan(kind, arg) {
   const prog = progress();
+  if (kind === 'endless') return endless.plan(prog, S.endless, S.rng);
   if (kind === 'grade') return gradePlan(arg, S.N, S.rng);
   if (kind === 'review') { const items = prog.review.slice(-Math.min(S.N, 10)); return reviewPlan(items); }
   if (kind === 'practice') return { mode: 'practice', skill: arg, basic: Array.from({ length: S.N }, () => arg), extra: () => { const kids = SKILLS.filter((x) => x.req.includes(arg) && isUnlocked(prog, x.id)); return kids.length ? kids[Math.floor(S.rng() * kids.length)].id : arg; } };
@@ -276,6 +280,9 @@ function nextProblem(i) {
   const plan = S.plan;
   if (plan.mode === 'review') return structuredClone(plan.items[i].problem);
   if (plan.legacy) return generate(plan.basic[i], S.rng, i === 0 ? { kind: 'add', a: 27, b: 35 } : null);
+  // Endless runs have no fixed length, so the plan supplies the i-th skill
+  // instead of an array entry.
+  if (plan.skillAt) return sessionProblem(plan.skillAt(i));
   const skill = params.get('skill') || (plan.placement ? plan.pick() : plan.basic[i]);
   return sessionProblem(skill);
 }
@@ -378,6 +385,8 @@ function startGame(kind = 'level', arg) {
   audio.unlock();
   S.run += 1;
   if (S.bonusOpen) { $('#bonus').hidden = true; S.bonusOpen = false; }
+  // Before the plan: its skillAt() reads the run live to know the wave.
+  if (kind === 'endless') S.endless = endless.newRun();
   S.N = pickedCount();
   S.rng = makeRng(Number(params.get('seed') || Math.floor(Math.random() * 1e9)));
   S.sessionSigs = new Set();
@@ -385,10 +394,15 @@ function startGame(kind = 'level', arg) {
   S.plan = makePlan(kind, arg);
   applyLook(playLook());
   if (S.plan.mode === 'review') S.N = S.plan.items.length;
+  // No total, so no progress dots and no target time - S.N drives both, and
+  // zero is the honest value for "unknown".
+  if (S.plan.mode === 'endless') S.N = 0;
   S.problems = [];
   S.wrongList = []; S.newUnlocks = []; S.newMastered = []; S.newStars = {}; S.sessionTimes = {}; S.capsuleNews = null; S.polished = [];
   planCapsule();
   Object.assign(S, { endT: 0, qi: 0, firstTry: 0, solved: 0, misses: 0, combo: 0, comboPeak: 0, mode: 'basic', reach: false });
+  // After the reset above, which would otherwise put the mode back to 'basic'.
+  if (S.plan.mode === 'endless') S.mode = 'endless';
   showCombo();
   S.dopa = { L: 0, shown: 0, unit: '' };
   S.extra = { score: 0, solved: 0, misses: 0, end: 0, over: false };
@@ -410,15 +424,36 @@ function startGame(kind = 'level', arg) {
 }
 
 function updateTally() {
-  $('#ok').textContent = S.mode === 'extra' ? S.extra.solved : S.solved;
-  $('#ng').textContent = S.mode === 'extra' ? S.extra.misses : S.misses;
+  const e = S.endless;
+  const running = S.mode === 'endless' && e;
+  $('#ok').textContent = running ? e.solved : S.mode === 'extra' ? S.extra.solved : S.solved;
+  $('#ng').textContent = running ? e.misses : S.mode === 'extra' ? S.extra.misses : S.misses;
+  if (running) $('#ok-total').textContent = '';
+}
+
+// The run's lives, in the progress dots' place. Wave first: that is the number
+// a player is trying to push.
+function renderLives() {
+  const e = S.endless;
+  if (!e) return;
+  $('#clock-label').textContent = t('第{n}波', { n: e.wave });
+  $('#pips').innerHTML = Array.from({ length: endless.LIVES }, (_, i) =>
+    `<span class="life${i < e.lives ? '' : ' gone'}">\u2665</span>`).join('');
+  const total = $$('.hud .life');
+  total.forEach((el, i) => el.classList.toggle('gone', i >= e.lives));
 }
 
 async function setupProblem() {
   S.ready = false;
   const extra = S.mode === 'extra';
+  const endlessRun = S.mode === 'endless';
   let E;
-  if (extra) {
+  if (endlessRun) {
+    renderLives();
+    E = endless.intensity(S.endless.wave);
+    applyLevel(E, { key: 0, bpm: 128 + Math.min(6, S.endless.wave) });
+    S.problem = S.problems[S.qi] || (S.problems[S.qi] = nextProblem(S.qi));
+  } else if (extra) {
     const tier = Math.floor(S.extra.solved / 3);
     E = 1 + Math.min(0.5, tier * 0.1);
     applyLevel(E, { key: 2 + Math.min(tier, 5), bpm: 134 + tier * 5 });
@@ -431,12 +466,13 @@ async function setupProblem() {
   }
   const p = S.problem;
   S.step = 0; S.wrongInQ = false; S.shownWrong = null;
-  $$('.pip').forEach((pp, i) => pp.classList.toggle('now', !extra && i === S.qi));
+  $$('.pip').forEach((pp, i) => pp.classList.toggle('now', !extra && !endlessRun && i === S.qi));
   $('#qtitle').textContent = p.title;
-  $('#qno').textContent = extra ? `EX ${S.extra.solved + 1}` : `第${S.qi + 1}問`;
+  $('#qno').textContent = endlessRun ? `#${S.endless.solved + 1}`
+    : extra ? `EX ${S.extra.solved + 1}` : `第${S.qi + 1}問`;
   renderSheet(p);
   $('#step-label').innerHTML = '&nbsp;';
-  const last = !extra && S.qi === S.N - 1;
+  const last = !extra && !endlessRun && S.qi === S.N - 1;
   const run = S.run;
   card.classList.toggle('capsule', !!p.capsule);
   if (p.capsule) {
@@ -444,7 +480,11 @@ async function setupProblem() {
     await capsuleIntro(p.capsule);
     if (S.screen !== 'play' || run !== S.run) return;
     const st = store.load(); st.capsule = { ...(st.capsule || {}), lastDay: store.dayKey() }; store.save();
-  } else if (E > 0.22 || extra) cutin(extra ? `EX ${S.extra.solved + 1}` : last ? t('最后1题') : t('第{n}题', { n: S.qi + 1 }), E);
+  } else if (E > 0.22 || extra || endlessRun) {
+    const label = endlessRun ? t('第{n}波', { n: S.endless.wave })
+      : extra ? `EX ${S.extra.solved + 1}` : last ? t('最后1题') : t('第{n}题', { n: S.qi + 1 });
+    cutin(label, E);
+  }
   await cardEnter(E);
   if (S.screen !== 'play' || run !== S.run) return;
   S.ready = true;
@@ -506,7 +546,12 @@ function press(key, btn = padButtons[key]) {
     S.wrongInQ = true;
     S.stepMisses = (S.stepMisses || 0) + 1;
     S.qMisses = (S.qMisses || 0) + 1;
-    if (S.mode === 'extra') S.extra.misses += 1; else S.misses += 1;
+    if (S.mode === 'endless') {
+      S.endless.misses += 1;
+      const out = endless.noteMiss(S.endless);
+      renderLives();
+      if (out) { endEndless(); return; }
+    } else if (S.mode === 'extra') S.extra.misses += 1; else S.misses += 1;
     updateTally();
     cell.classList.add('bad', 'has', 'pending');
     cell.textContent = key;
@@ -722,11 +767,17 @@ async function clearProblem() {
   const wasReach = S.reach;
   if (wasReach) endReach();
   const extra = S.mode === 'extra';
+  const endlessRun = S.mode === 'endless';
   noteProblem(S.problem, !S.wrongInQ);
   let gained = 0;
-  if (extra) { gained = extraPoints(S.extra.solved); S.extra.solved += 1; S.extra.score += gained; } else { S.solved += 1; if (!S.wrongInQ) S.firstTry += 1; }
+  if (endlessRun) {
+    gained = extraPoints(S.endless.solved);
+    const back = endless.noteSolved(S.endless, !S.wrongInQ);
+    // A life coming back is worth saying out loud, and worth a life-shaped ring.
+    if (back) { renderLives(); audio.unit(0.5); const r = card.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + 20, { count: 18, kinds: ['heart'], speed: 340, up: 120 }); }
+  } else if (extra) { gained = extraPoints(S.extra.solved); S.extra.solved += 1; S.extra.score += gained; } else { S.solved += 1; if (!S.wrongInQ) S.firstTry += 1; }
   updateTally();
-  if (!extra) {
+  if (!extra && !endlessRun) {
     const pip = $$('.pip')[S.qi];
     pip.classList.remove('now');
     pip.classList.add('done');
@@ -738,13 +789,13 @@ async function clearProblem() {
   if (gained) pointsPop(gained);
   if (wasReach) audio.reachHit(E); else audio.clear(E);
   hanamaru(E);
-  const lastBasic = !extra && S.qi === S.N - 1;
+  const lastBasic = !extra && !endlessRun && S.qi === S.N - 1;
   celebrate(E, wasReach, lastBasic);
   const capsuleShown = S.problem.capsule ? capsuleDone(S.problem.capsule) : false;
   if (lastBasic) { if (capsuleShown) await wait(1600); await finale(); return; }
   const run = S.run;
-  await wait((extra ? 520 : lerp(600, 1150, clamp(E))) + (wasReach ? 250 : 0) + (capsuleShown ? 1900 : 0));
-  if (S.screen !== 'play' || run !== S.run || (extra && S.extra.over)) return;
+  await wait((extra || endlessRun ? 520 : lerp(600, 1150, clamp(E))) + (wasReach ? 250 : 0) + (capsuleShown ? 1900 : 0));
+  if (S.screen !== 'play' || run !== S.run || (extra && S.extra.over) || (endlessRun && S.endless.over)) return;
   if (!extra) S.qi += 1;
   setupProblem();
 }
@@ -904,8 +955,13 @@ function bumpDopa(cell) {
   const prev = S.dopa.L;
   const n = S.problem.steps.length;
   // No-combo step for this answer cell; the combo scales it up a little.
-  const base = S.mode === 'extra' ? extraProblemGain(S.extra.solved) / n
-    : basicDopaL((S.qi + S.step / n) / S.N) - basicDopaL((S.qi + (S.step - 1) / n) / S.N);
+  // The endless run has no total, so the basic curve's "how far through are we"
+  // has nothing to divide by: it divides by S.endless.solved and uses the extra
+  // stage's ramp instead. Left on the basic branch it would divide by zero,
+  // turn the whole figure into NaN, and print as a plausible-looking infinity.
+  const base = S.mode === 'endless' ? extraProblemGain(S.endless.solved) / n
+    : S.mode === 'extra' ? extraProblemGain(S.extra.solved) / n
+      : basicDopaL((S.qi + S.step / n) / S.N) - basicDopaL((S.qi + (S.step - 1) / n) / S.N);
   S.dopa.L = addDopa(prev, base, S.combo);
   const E = S.E;
   if (E > 0.12 && !S.reduced) {
@@ -1264,6 +1320,48 @@ function startExtra() {
   setupProblem();
 }
 
+async function endEndless() {
+  const run = S.run;
+  S.endless.over = true;
+  S.ready = false;
+  if (S.reach) endReach();
+  audio.gong();
+  bigStamp(t('结束'));
+  S.flash = 0.6;
+  await wait(1700);
+  if (run !== S.run) return;
+  showEndlessResult();
+}
+
+// The terminal page for a run. Deliberately its own screen rather than the
+// extra stage's: there is nothing to lead into from here, only to try again.
+function showEndlessResult() {
+  const e = S.endless;
+  const elapsed = Math.round((S.endT || now()) - S.startT);
+  const rate = e.solved ? e.firstTry / e.solved : 0;
+  if (recording()) {
+    S.record = store.addRecord({
+      mode: 'endless', count: e.solved, score: e.score, ok: e.solved, ng: e.misses,
+      firstRate: rate, timeMs: elapsed, dopaL: S.dopa.L, endlessWave: e.wave,
+    });
+    growth.notePlay(stats(), { mode: 'endless', day: store.dayKey(), timeMs: elapsed, dopaL: S.dopa.L, firstRate: rate });
+    growth.noteEndless(stats(), e.wave, e.solved);
+    const best = store.load().endlessBest;
+    if (!best || e.wave > best.wave) store.load().endlessBest = { wave: e.wave, at: Date.now() };
+    store.save();
+  }
+  $('#e-wave').innerHTML = `${e.wave}<small>${t('波')}</small>`;
+  $('#e-ok').innerHTML = `${e.solved}<small>${t('题')}</small>`;
+  $('#e-score').textContent = fmtNum(e.score);
+  $('#e-dopa').textContent = fmtDopa(S.dopa.L);
+  renderSkillNews($('#e-skills'));
+  refreshEndlessEntry();
+  if (checkTrophies().length) { const run = S.run; setTimeout(() => { if (run === S.run && S.screen === 'endless') openTrophies(); }, 2600); }
+  audio.play('musicGain', audio.now(), { v: 0.55, ramp: 0.6 });
+  showScreen('endless');
+  countUp($('#e-score'), e.score, 1300);
+}
+
 async function endExtra() {
   const run = S.run;
   S.extra.over = true;
@@ -1498,6 +1596,7 @@ function refreshTitle() {
   refreshTrophyBadge();
   const got = gotTrophies();
   $('#collect-badge').textContent = `${ul.ITEMS.filter((it) => ul.isUnlocked(it, got)).length}/${ul.ITEMS.length}`;
+  refreshEndlessEntry();
 }
 
 function toTitle() {
@@ -1551,6 +1650,10 @@ onFrame((dt, ts) => {
         if (sec !== S.lastTick) { S.lastTick = sec; audio.tick(sec <= 1); }
       }
       if (left <= 0 && !S.extra.over) endExtra();
+    } else if (S.mode === 'endless') {
+      // Nothing to run out of but lives, so the clock just counts up.
+      txt = fmtTime((S.endT || ts) - S.startT);
+      $('.clock').classList.remove('over');
     } else {
       const el = (S.endT || ts) - S.startT;
       txt = fmtTime(el);
@@ -2329,6 +2432,21 @@ function renderGrowthPage() {
   $('#gh').innerHTML = growthHtml(r);
 }
 
+// The endless button says what the mode is before the first run, and what
+// there is to beat after it. One line, so the entry never grows.
+function refreshEndlessEntry() {
+  const best = store.load().endlessBest;
+  $('#endless-sub').textContent = best
+    ? t('最高{n}波', { n: best.wave })
+    : t('3条命・答错扣命・每10题回命');
+}
+
+function startEndless() {
+  audio.unlock();
+  audio.play('blip', audio.now(), { m: 76, v: 0.12 });
+  startGame('endless');
+}
+
 function openGrowth() {
   audio.unlock();
   audio.play('blip', audio.now(), { m: 79, v: 0.1 });
@@ -2699,6 +2817,9 @@ $('#collect-back').addEventListener('click', () => { audio.play('blip', audio.no
 $('#co-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; co.cat = b.dataset.cat; audio.play('blip', audio.now(), { m: 80, v: 0.08 }); clearPreviewCrowd(); renderCollection(); $('#co-scroll').scrollTop = 0; });
 $('#co-grid').addEventListener('click', (e) => { const b = e.target.closest('.co-item'); if (b) pickItem(b.dataset.id); });
 $('#trophy-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
+$('#endless').addEventListener('click', startEndless);
+$('#e-again').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.12 }); startEndless(); });
+$('#e-title').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
 $('#open-growth').addEventListener('click', openGrowth);
 $('#growth-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
 $('#growth-print').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.1 }); print(); });

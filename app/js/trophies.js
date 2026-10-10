@@ -11,7 +11,7 @@ import { isUnlocked, isMastered, starsOf } from './session.js';
 import { t, fmtNum, getLocale } from './i18n.js';
 import { fmtDopa } from './scoring.js';
 
-export const CATS = ['坚持', '数量', '技能', '成长', '加时挑战', '连击', '准确', '多巴', '复习', '年级', '收藏', '秘密'];
+export const CATS = ['坚持', '数量', '技能', '成长', '加时挑战', '无尽', '连击', '准确', '多巴', '复习', '年级', '收藏', '秘密'];
 
 // Compact number for trophy names: 1万 / 10K style.
 const fmt = (n) => {
@@ -91,6 +91,8 @@ export const seriesTitle = (s) => (typeof s.title === 'function' ? s.title() : t
   { key: 'starsTotal', cat: '技能', title: '星星数', metric: 'starsTotal', steps: [5, 10, 25, 50, 75, 100, 150, 200, 250, 290], name: (v) => t('{n}颗星', { n: v }), desc: (v) => t('累计收集{n}颗技能星', { n: v }) },
   { key: 'star5', cat: '技能', title: '☆5技能', metric: 'star5', steps: [1, 3, 5, 10, 20, 30, 58], name: (v) => t('☆5 {n}项', { n: v }), desc: (v) => t('把{n}项技能练到☆5', { n: v }) },
   { key: 'gradeStar3', cat: '技能', title: '按年级全部☆3', items: [1, 2, 3, 4, 5, 6].map((g) => ({ id: `gradeStar3-${g}`, metric: `gradeStar3${g}`, need: 1, arg: g, name: (v) => t('{g}年级全部☆3', { g: v }), desc: (v) => t('把{g}年级的全部技能练到☆3以上', { g: v }) })) },
+  { key: 'endlessBest', cat: '无尽', title: '最高波次', metric: 'endlessBest', steps: [3, 5, 10, 15, 20, 30], name: (v) => t('最高{n}波', { n: v }), desc: (v) => t('无尽模式打到第{n}波', { n: v }) },
+  { key: 'endlessSolved', cat: '无尽', title: '无尽解题', metric: 'endlessSolved', steps: [10, 30, 50, 100, 300, 1000], name: (v) => t('无尽答对{n}题', { n: v }), desc: (v) => t('在无尽模式里累计答对{n}题', { n: v }) },
   { key: 'polished', cat: '成长', title: '擦亮生锈', metric: 'polished', steps: [1, 3, 5, 10, 30, 50], name: (v) => t('擦亮{n}次', { n: v }), desc: (v) => t('擦亮{n}次生锈技能', { n: v }) },
   { key: 'capsules', cat: '成长', title: '时间胶囊', metric: 'capsules', steps: [1, 3, 5, 10, 30], name: (v) => t('打开{n}个', { n: v }), desc: (v) => t('打开{n}个时间胶囊', { n: v }) },
   { key: 'capsuleFaster', cat: '成长', title: '比那天更快', metric: 'capsuleFaster', steps: [1, 5, 10], name: (v) => t('比那天快{n}次', { n: v }), desc: (v) => t('在时间胶囊中比那天更快解出（{n}次）', { n: v }) },
@@ -109,6 +111,7 @@ export function trophyMetrics(snap) {
     problems: s.problems || 0, cells: s.cells || 0, plays: s.plays || 0, minutes: Math.floor((s.playMs || 0) / 60000),
     unlocked: SKILLS.filter((x) => isUnlocked(prog, x.id)).length, mastered: SKILLS.filter((x) => isMastered(prog, x.id)).length,
     extras: s.extras || 0, extraBest: s.extraBest || 0, extraSolved: s.extraSolved || 0, maxCombo: s.maxCombo || 0,
+    endlessRuns: s.endlessRuns || 0, endlessSolved: s.endlessSolved || 0, endlessBest: s.endlessBest || 0,
     perfects: s.perfects || 0, firstTry: s.firstTry || 0, bestDopaL: Math.floor((s.bestDopaL || 0) + 1e-9), reviewSolved: s.reviewSolved || 0,
   };
   const stars = Object.fromEntries(SKILLS.map((x) => [x.id, starsOf(prog, x.id)]));

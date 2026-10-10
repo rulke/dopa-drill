@@ -43,6 +43,7 @@
       <div class="title-stage" id="title-stage" aria-hidden="true"></div>
       <div class="modes" id="modes">
         <button type="button" id="start" class="big-btn level-btn"><span data-i18n="我的等级">我的等级</span><small id="level-sub" data-i18n="先来实力测试">先来实力测试</small></button>
+        <button type="button" id="endless" class="sub-btn endless-btn"><span data-i18n="无尽挑战">无尽挑战</span><small id="endless-sub">3条命・答错扣命・每10题回命</small></button>
         <button type="button" id="start-review" class="sub-btn review-btn review-main" hidden><span data-i18n="复习">复习</span> <b id="review-count">0</b></button>
         <div class="grades" role="group" data-i18n-aria="按年级" aria-label="按年级">
           <button type="button" data-grade="1">1<small data-i18n="grade.1">年级</small></button><button type="button" data-grade="2">2<small data-i18n="grade.2">年级</small></button><button type="button" data-grade="3">3<small data-i18n="grade.3">年级</small></button>
@@ -86,6 +87,25 @@
     </section>
 
     <!-- Trophies (id036) -->
+    <!-- Endless: the run's own result page. Nothing leads on from here, so
+         the two buttons are its whole set. -->
+    <section id="screen-endless" class="screen" aria-labelledby="endless-title">
+      <div class="result-card">
+        <p class="chip" id="endless-title" data-i18n="无尽挑战结束">无尽挑战结束</p>
+        <p class="score"><b id="e-wave">1</b><span data-i18n="波">波</span></p>
+        <dl class="stats">
+          <div><dt data-i18n="答对">答对</dt><dd id="e-ok">0题</dd></div>
+          <div><dt data-i18n="得分">得分</dt><dd id="e-score">0</dd></div>
+        </dl>
+        <p class="dopa-final"><small data-i18n="多巴">多巴</small><b id="e-dopa">0</b></p>
+        <div class="skill-news" id="e-skills"></div>
+        <div class="actions">
+          <button type="button" id="e-again" class="big-btn" data-i18n="再来一次">再来一次</button>
+          <button type="button" id="e-title" class="sub-btn" data-i18n="返回标题">返回标题</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Growth: a read-only record of what has been practised and what has
          stuck. Nothing here is a score, and nothing is hidden from the child. -->
     <section id="screen-growth" class="screen" aria-labelledby="growth-title">

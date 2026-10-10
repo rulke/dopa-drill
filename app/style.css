@@ -457,6 +457,16 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 .gh-meter { height: 12px; margin: 6px 0 8px; border: 2.5px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
 .gh-meter i { display: block; height: 100%; background: var(--mint); }
 
+/* ------------------------------------------------------------ endless */
+/* Lives sit where the progress dots do, so the HUD keeps its height. */
+.life { font-size: 19px; line-height: 1; color: var(--red); text-shadow: 0 2px 0 #fff; }
+.life.gone { color: #cfd2e6; text-shadow: none; }
+.hud .life + .life { margin-left: 3px; }
+/* Two lines, like the level button: the mode and what it costs to play. */
+.endless-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; height: 52px; background: #ffefd6; }
+.endless-btn small { font-size: 11px; letter-spacing: 0; opacity: .85; }
+#screen-endless { flex-direction: column; justify-content: center; }
+
 /* On paper the cards should not each carry a drop shadow, and the screen
    chrome has no meaning. */
 @media print {

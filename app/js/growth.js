@@ -6,6 +6,7 @@ export function emptyStats() {
     problems: 0, cells: 0, firstTry: 0, misses: 0,
     plays: 0, modes: {}, perfects: 0, playMs: 0, bestDopaL: 0,
     extras: 0, extraSolved: 0, extraBest: 0,
+    endlessRuns: 0, endlessSolved: 0, endlessBest: 0,
     maxCombo: 0, reviewSolved: 0,
     days: 0, lastDay: null,
     grades: {}, flags: {},
@@ -28,6 +29,7 @@ export function statsFromHistory(history = []) {
     if (h.firstRate != null) s.firstTry += Math.round(h.firstRate * (h.ok || h.count || 0));
     if (h.firstRate === 1 && h.mode !== 'review') s.perfects += 1;
     if (h.extraOk != null) { s.extras += 1; s.extraSolved += h.extraOk; s.extraBest = Math.max(s.extraBest, h.extraOk); }
+    if (h.mode === 'endless') { s.endlessRuns += 1; s.endlessSolved += h.ok || 0; s.endlessBest = Math.max(s.endlessBest, h.endlessWave || 0); }
     s.playMs += h.timeMs || 0;
     s.bestDopaL = Math.max(s.bestDopaL, h.dopaL || 0);
     if (h.mode === 'grade' && h.grade) s.grades[h.grade] = (s.grades[h.grade] || 0) + 1;
@@ -66,6 +68,14 @@ export function notePlay(s, { mode, grade, day, timeMs = 0, dopaL = 0, firstRate
 }
 
 export function noteExtraStart(s) { s.extras += 1; }
+
+// One endless run, finished. The wave reached is the figure worth keeping: it
+// is what the mode's own best-run line and its trophies read.
+export function noteEndless(s, wave, solved) {
+  s.endlessRuns = (s.endlessRuns || 0) + 1;
+  s.endlessSolved = (s.endlessSolved || 0) + solved;
+  s.endlessBest = Math.max(s.endlessBest || 0, wave || 0);
+}
 export function setFlag(s, name) { s.flags = s.flags || {}; s.flags[name] = true; }
 export function noteDopa(s, L) { s.bestDopaL = Math.max(s.bestDopaL, L); }
 

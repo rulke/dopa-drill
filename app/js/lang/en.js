@@ -313,4 +313,20 @@ export const en = {
   '最长记录': 'Longest streak',
   '打印': 'Print',
 
+  // endless mode
+  '无尽挑战': 'Endless',
+  '无尽挑战结束': 'Endless run over',
+  '无尽': 'Endless',
+  '第{n}波': 'Wave {n}',
+  '波': 'waves',
+  '最高{n}波': 'Best wave {n}',
+  '最高波次': 'Best wave',
+  '3条命・答错扣命・每10题回命': '3 lives · a wrong digit costs one · one back every 10',
+  '得分': 'Score',
+  '返回标题': 'Back to title',
+  '无尽解题': 'Endless problems',
+  '无尽答对{n}题': '{n} solved in endless',
+  '无尽模式打到第{n}波': 'Reach wave {n} in endless mode',
+  '在无尽模式里累计答对{n}题': 'Answer {n} problems in endless mode',
+
 };
