@@ -137,49 +137,65 @@ test('the endless total starts at nothing and never flattens', () => {
     assert.ok(endlessProblemGain(n) > 0, `the step at n=${n} must stay positive`);
     prev = now;
   }
-  // Compare against the curve endless would otherwise have borrowed: the extra
-  // stage's, which is flat by n=40.
-  assert.ok(endlessProblemGain(30) > extraDopaL(40) - extraDopaL(30),
-    'the endless step must still be worth something where the extra step is not');
+  // The claim is that this never converges, so compare the two curves where it
+  // matters - far out, past anything a player reaches. The extra stage's step is
+  // gone to zero there; this one is merely tiny, and addDopa's 0.003 floor is
+  // what keeps the figure moving regardless.
+  assert.ok(endlessProblemGain(100000) > 1e-6, 'the endless step must still be there');
+  assert.ok(extraProblemGain(100000) < 1e-6, 'while the extra step must be gone');
+  assert.ok(addDopa(0, endlessProblemGain(100000), 1, ENDLESS_DOPA_MAX_L) >= 0.003,
+    'and the floor keeps the far tail moving even when the raw step is smaller');
 });
 
-test('a good endless run reaches 兆', () => {
-  // The design's target, at its slowest reading: with no combo at all, 60
-  // problems is not there yet and 80 is.
-  assert.ok(10 ** runOf(60) < 1e12, `60 problems must not be there yet: 10^${runOf(60).toFixed(2)}`);
-  assert.ok(runOf(80) >= 12, `80 problems must be: 10^${runOf(80).toFixed(2)}`);
-  // Each unit on the way is a milestone the pad can actually print.
-  assert.equal(unitOf(runOf(80)), '兆', 'and the figure reads in 兆');
+test('兆 is a long-run goal, and still reachable', () => {
+  // span 1.2 deliberately gives up the design's "60-80 problems to reach 兆".
+  // What is left to hold onto is that the top units happen at all, inside a run a
+  // person could finish: 388 problems of flawless play. The bounds are loose
+  // because this is a shape, not a stopwatch.
+  const at = crossesAt(12, 2);
+  assert.ok(at > 300 && at < 420, `兆 must be a long run, not a session: got ${at}`);
+  assert.ok(playOf(60, 2) < 8, `60 problems must not reach 亿: 10^${playOf(60, 2).toFixed(2)}`);
+  assert.ok(playOf(120, 2) < 9, `nor 120 problems: 10^${playOf(120, 2).toFixed(2)}`);
+  // And a session should still climb through the named units. unitOf returns the
+  // milestone the slam fires on, which is why 10^6.9 reads as 百万 and not 万.
+  assert.equal(unitOf(playOf(60, 2)), '百万', '60 problems lands in the 百万 milestone');
+  assert.equal(unitOf(playOf(300, 2)), '亿', 'and 300 in 亿');
 });
 
 test('the unit rhythm holds at both ends of the combo', () => {
-  // A real no-miss run of 60 problems, measured in the browser, crossed 万 at
-  // problem 4, 亿 at 11, 兆 at 22 and 京 at 41 - the combo end of this table. The
-  // no-combo column is the same curve with the multiplier pinned at 1. Both are
-  // asserted, because a retune that helps one silently breaks the other.
-  const withCombo = [4, 10, 20, 38, 70].map((n, i) => unitOf(playOf(n, 2)));
-  assert.deepEqual(withCombo, ['万', '亿', '兆', '京', '垓']);
-  const noCombo = [5, 21, 74, 254].map((n) => unitOf(runOf(n)));
-  assert.deepEqual(noCombo, ['万', '亿', '兆', '京']);
-  // The unit table is not decoration: a good run should exhaust the four units a
-  // child can name and still have room above.
-  assert.ok(crossesAt(12, 2) < 40, 'the combo case must not take a whole session to reach 兆');
-  assert.ok(crossesAt(12, 0) < 90, 'and the no-combo case must still get there inside a long run');
+  // The combo end is what a player meets: the multiplier maxes at 20 cells and
+  // stays. The no-combo end is the same curve with it pinned at 1.05 (the first
+  // correct cell always gets that much). Both are asserted, because a retune that
+  // helps one silently breaks the other.
+  assert.deepEqual([17, 96, 388, 721, 1054].map((n) => unitOf(playOf(n, 2))),
+    ['万', '亿', '兆', '京', '垓']);
+  assert.deepEqual([46, 819, 2089].map((n) => unitOf(runOf(n))), ['万', '亿', '兆']);
+  // The no-combo end is not a mode anyone plays - it exists so that a run which
+  // never chains still moves - and it takes better than twice as long to a unit.
+  assert.ok(crossesAt(4, 0) > 2 * crossesAt(4, 2), 'a sustained combo must be worth having');
 });
 
-test('the units keep coming after 兆', () => {
-  // Not just "it grows": the point of an unsaturated curve is that the UNIT
-  // changes, which is what the player actually sees. 京 is the next one up.
-  const units = [5, 20, 80, 300, 1200].map((n) => unitOf(runOf(n)));
-  assert.deepEqual(units, ['万', '亿', '兆', '京', '垓']);
+test('the first minutes still show a number that moves', () => {
+  // The whole point of the curve is that a child watches the figure grow. A
+  // slower span must not flatten the opening: each of the first six problems
+  // should still be visibly bigger than the one before it.
+  const shown = [];
+  for (let k = 1; k <= 6; k++) shown.push(Math.round(10 ** playOf(k, 1)));
+  for (let i = 1; i < shown.length; i++) {
+    assert.ok(shown[i] > shown[i - 1], `problem ${i + 1} must read higher than ${i}: ${shown.join(', ')}`);
+    assert.ok(shown[i] - shown[i - 1] >= 2, `and by more than a rounding error: ${shown.join(', ')}`);
+  }
+  assert.equal(shown[0], 3, 'the first problem is a small, readable number');
 });
 
 test('the ceiling is a backstop, not a destination', () => {
   // The cap exists so fmtDopa and the 10^68 unit table never see a figure they
-  // cannot print. A great run must not touch it - a cap a good player reaches is
-  // the saturation this curve was written to avoid.
+  // cannot print. At this span it takes a run nobody can play to touch it, which
+  // is the point: a cap a good player reaches is the saturation this curve was
+  // written to avoid.
   assert.ok(runOf(120, 20) < ENDLESS_DOPA_MAX_L, 'even a 120-problem full-combo run stays under');
-  assert.ok(runOf(10000, 20) === ENDLESS_DOPA_MAX_L, 'but it is still a ceiling');
+  assert.ok(runOf(1888, 20) < ENDLESS_DOPA_MAX_L, 'and a 1888-problem one still stays under');
+  assert.equal(runOf(1e6, 20), ENDLESS_DOPA_MAX_L, 'but it is still a ceiling');
 });
 
 test('the cap belongs to the mode, not to the arithmetic', () => {

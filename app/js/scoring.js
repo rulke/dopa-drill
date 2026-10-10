@@ -40,17 +40,20 @@ export const DOPA_MAX_L = 9.08;
 // offset, summed by difference) hides an error of the offset - the totals look
 // right in isolation while the number on screen is two units low.
 //
-// Tuned so the units keep arriving: 兆 lands inside a run a player can actually
-// have. How long that takes depends on the combo, and the design already decided
-// to keep the combo at x2, so both ends are real:
+// Tuned for a slow rhythm: the units are long-run goals, not session rewards.
+// How long depends on the combo, and the design keeps the combo at x2, so both
+// ends are real:
 //
-//   with a combo (maxes at 20 cells):  万 @4, 亿 @10, 兆 @20, 京 @38, 垓 @70
-//   with no combo at all:              万 @5, 亿 @21, 兆 @74, 京 @254
+//   with a combo (maxes at 20 cells):  万 @17, 亿 @96, 兆 @388, 京 @721, 垓 @1054
+//   with no combo at all:              万 @55, 亿 @1570, 兆 @44051
 //
-// A no-miss run of 60 problems ends near 10^17.5. The design note's "60-80
-// problems to reach 兆" describes the no-combo end; with combos it arrives about
-// three times sooner.
-export const ENDLESS_DOPA = { span: 3.3, tau: 2 };
+// A no-miss run of 60 problems ends near 10^6.9 and one of 300 near 10^11. The
+// design's original "60-80 problems to reach 兆" is deliberately given up here:
+// 兆 now needs a flawless ~390-problem run, so the top of the unit table reads as
+// legendary rather than as a target. Raise `span` to shorten that (2.0 puts 兆 at
+// problem 68 with combos); the cost of 1.2 is that most players will never see
+// the upper units at all.
+export const ENDLESS_DOPA = { span: 1.2, tau: 2 };
 export const ENDLESS_DOPA_MAX_L = 30;
 export const endlessTotalL = (n) => ENDLESS_DOPA.span * Math.log(1 + Math.max(0, n) / ENDLESS_DOPA.tau);
 export const endlessProblemGain = (k) => endlessTotalL(k + 1) - endlessTotalL(k);
