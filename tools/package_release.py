@@ -34,6 +34,16 @@ def web_files(base):
 
 files = web_files(app)
 
+# The archive is assembled with LF, whatever the checkout looks like on disk.
+# A Windows checkout with core.autocrlf puts CRLF in the working tree, and
+# without this the published zip - and its checksum - would depend on which
+# branches the packager happened to switch through. Only text types are
+# touched: a CRLF inside a PNG or a WOFF2 would be corruption.
+TEXT = ('.html', '.css', '.js', '.mjs', '.webmanifest', '.svg', '.txt', '.json', '.md')
+for rel in list(files):
+    if rel.endswith(TEXT):
+        files[rel] = files[rel].replace(b'\r\n', b'\n')
+
 # Deterministic archive: sorted entries and a pinned timestamp, so re-running
 # this script for the same release reproduces the same file and the published
 # checksum keeps meaning something. Bump STAMP when starting a new release.
@@ -51,8 +61,14 @@ apk_dst = os.path.join(dist, 'dopa-drill-%s-android-debug.apk' % VERSION)
 if not os.path.exists(apk_src):
     sys.exit('APK not found at %s\n  build it first:  cd mobile && npm run apk' % apk_src)
 
-# Every web file the APK carries must be byte-identical to app/. A mismatch
-# means the Android project is holding a stale copy.
+# Every web file the APK carries must be the same source file as app/. A
+# mismatch means the Android project is holding a stale copy.
+#
+# Line endings are normalised before comparing: this repository is LF in git,
+# but a Windows checkout with core.autocrlf rewrites the working tree to CRLF,
+# so the same file is legitimately either on disk. Comparing raw bytes would
+# report a stale APK every time someone switched branches.
+norm = lambda b: b.replace(b'\r\n', b'\n')
 with zipfile.ZipFile(apk_src) as z:
     apk_names = set(z.namelist())
     stale, missing = [], []
@@ -60,7 +76,7 @@ with zipfile.ZipFile(apk_src) as z:
         entry = 'assets/public/' + rel
         if entry not in apk_names:
             missing.append(rel)
-        elif z.read(entry) != data:
+        elif norm(z.read(entry)) != norm(data):
             stale.append(rel)
 
 if missing or stale:
@@ -71,7 +87,7 @@ if missing or stale:
         + '  the Android project copies app/ via `cap copy`; rebuild with:\n'
         + '    cd mobile && npm run apk',
     )
-print('apk:  %d web files verified byte-identical to app/' % len(files))
+print("apk:  %d web files verified identical to app/ (line endings normalised)" % len(files))
 
 shutil.copy2(apk_src, apk_dst)
 print('apk:  %.1f MB' % (os.path.getsize(apk_dst) / 1048576))
