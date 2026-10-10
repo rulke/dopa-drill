@@ -24,8 +24,28 @@ export function basicDopaL(frac) {
 const EXTRA_SPAN = 3.0; const EXTRA_TAU = 10;
 export const extraDopaL = (n) => BASIC_DOPA_L + EXTRA_SPAN * (1 - Math.exp(-n / EXTRA_TAU));
 export const extraProblemGain = (k) => extraDopaL(k + 1) - extraDopaL(k);
-// Hard ceiling: about 12億, whatever the combo.
+// Hard ceiling: about 12億, whatever the combo. The extra stage is meant to
+// end inside one round, so a ceiling is right there.
 export const DOPA_MAX_L = 9.08;
+
+// Endless has no such ceiling to respect: the whole point of a run that keeps
+// going is that the figure keeps climbing, and the unit table (up to 无量大数)
+// was written for exactly that. Logarithmic growth instead of a saturating
+// curve: the step per problem shrinks but never reaches zero, so the units keep
+// advancing - 万, 亿, 兆, 京 - for as long as the run lasts.
+//
+// This is the RUN TOTAL, not an offset added to the basic curve: the number the
+// player sees after n problems is exactly endlessTotalL(n), and the per-problem
+// step is its difference. Writing it the other way round (a curve with a start
+// offset, summed by difference) hides an error of the offset - the totals look
+// right in isolation while the number on screen is two units low.
+//
+// Tuned so a good run reaches 兆 between its 60th and 80th problem: 万 by the
+// 5th, 亿 by the 20th, 兆 by the 77th, and still climbing after that.
+export const ENDLESS_DOPA = { span: 3.3, tau: 2 };
+export const ENDLESS_DOPA_MAX_L = 30;
+export const endlessTotalL = (n) => ENDLESS_DOPA.span * Math.log(1 + Math.max(0, n) / ENDLESS_DOPA.tau);
+export const endlessProblemGain = (k) => endlessTotalL(k + 1) - endlessTotalL(k);
 
 // ---------------------------------------------------------------- combo
 // One combo per correct answer cell, carried across problems. It does not
@@ -36,8 +56,10 @@ export const comboMult = (combo) => 1 + (COMBO_DOPA.max - 1) * Math.min(1, Math.
 export const comboMaxed = (combo) => combo >= COMBO_DOPA.full;
 
 // Add one answer cell's worth of dopa. `base` is the no-combo step (log10).
-export function addDopa(L, base, combo) {
-  return Math.min(DOPA_MAX_L, L + Math.max(0.003, base) * comboMult(combo));
+// The cap is a parameter because it belongs to the mode, not to the arithmetic:
+// the extra stage must end inside a round, an endless run must not.
+export function addDopa(L, base, combo, cap = DOPA_MAX_L) {
+  return Math.min(cap, L + Math.max(0.003, base) * comboMult(combo));
 }
 
 // Time allowed to enter the next answer cell before the combo breaks

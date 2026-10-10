@@ -1,9 +1,9 @@
 // Endless mode: the rules and the ladder, as pure functions over a run object.
 //
-// Phase 3 of docs/DESIGN.md: the mode arrives WITHOUT the extended show ladder
-// (levels still top out at 10) and without a new dopa curve. The point of doing
-// it this way is to answer "is this fun" before paying for the content work -
-// five new visual tiers and five new instrument layers - that phase 5 would be.
+// Phase 3 of docs/DESIGN.md shipped the mode WITHOUT the extended show ladder,
+// to answer "is this fun" before paying for the content work. Phase 5 has now
+// paid for it: the ladder runs to 16 (see tierOf) and the dopa curve no longer
+// converges (see endlessTotalL in scoring.js).
 //
 // Three rules shape it:
 //
@@ -44,10 +44,22 @@ export const waveOf = (firstTry) => Math.floor(firstTry / WAVE_EVERY) + 1;
 // Waves 1-2 are grade 1, 3-4 grade 2, and so on to grade 6.
 export const gradeOf = (wave) => Math.min(GRADE_MAX, 1 + Math.floor((Math.max(1, wave) - 1) / 2));
 
-// The show ran out of discrete levels at 1.0 in the current build; letting E
-// climb past it still feeds crowd size, particles and shake, so the run gets
-// livelier even before phase 5 adds anything to look at.
-export const intensity = (wave) => 1 + Math.min(6, 0.18 * Math.max(1, wave));
+// The show's loudness for a wave, and the rung of the ladder it stands on. These
+// are two different questions and phase 5 split them apart: intensity says how
+// big this moment is, the tier says how far the run has come. Bound to one
+// number they fought each other - the wave count drove intensity past 7, which
+// is more particles than the fx layer can render well, while the level it was
+// supposed to feed had already pinned at its ceiling.
+export const E_MAX = 1.6;
+export const intensity = (wave) => 1 + (E_MAX - 1) * (1 - Math.exp(-Math.max(0, wave - 1) / 9));
+
+// Tiers 11 and up belong to the run that outlasts a basic set: one new rung
+// every two waves, so the show is still changing at wave 13 rather than
+// spending the whole ladder on the first four.
+export const BASE_TIER = 10;
+export const WAVES_PER_TIER = 2;
+export const TIER_MAX = 16;
+export const tierOf = (wave) => Math.min(TIER_MAX, BASE_TIER + Math.floor((Math.max(1, wave) - 1) / WAVES_PER_TIER));
 
 // One problem finished. `firstTry` is whether it went in without a wrong digit.
 // Returns true when a life came back.

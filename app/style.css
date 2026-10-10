@@ -229,11 +229,15 @@ body.lv6 .dopa { background: linear-gradient(90deg, #ffd23f, #ff9ccc, #9fd0ff, #
 .ground { position: absolute; left: 6%; right: 6%; bottom: 6px; width: 88%; height: 14px; }
 .bunting { position: absolute; left: -2%; right: -2%; top: 0; width: 104%; height: 34px; opacity: 0; transform: translateY(-20px); transition: opacity .5s, transform .5s cubic-bezier(.3, 1.6, .5, 1); }
 body.lv3 .bunting { opacity: 1; transform: none; }
+.spots { position: absolute; inset: 0; }
 .spot { position: absolute; top: -30px; width: 140px; height: 190px; opacity: 0; transition: opacity .6s; mix-blend-mode: screen; filter: blur(2px);
   background: linear-gradient(to bottom, rgba(255, 246, 200, .95), rgba(255, 246, 200, 0)); clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%); }
 .spot-l { left: 0; transform-origin: 50% 0; animation: spot-l 3s ease-in-out infinite; }
 .spot-r { right: 0; transform-origin: 50% 0; animation: spot-r 3.4s ease-in-out infinite; }
-body.lv5 .spot { opacity: .7; }
+/* The first pair, named one pair at a time from the start: a bare `.spot` here
+   would also light the pair rung 12 introduces, which would then have nothing to
+   add. See the ladder block further down for what each rung owns. */
+body.lv5 .spot-l, body.lv5 .spot-r { opacity: .7; }
 @keyframes spot-l { 0%, 100% { transform: rotate(-24deg); } 50% { transform: rotate(10deg); } }
 @keyframes spot-r { 0%, 100% { transform: rotate(24deg); } 50% { transform: rotate(-12deg); } }
 
@@ -318,6 +322,72 @@ body.lv4 .pad button[data-key="9"], body.lv4 .pad button[data-key="5"], body.lv4
 body.lv4 .pad button[data-key="6"], body.lv4 .pad button[data-key="2"], body.lv4 .pad button[data-key="0"] { background: #dcfaef; }
 body.lv8 .pad button { box-shadow: 0 5px 0 var(--ink), 0 0 calc(var(--kick) * 18px) rgba(255, 210, 63, .9); }
 .pad button:disabled { opacity: .5; }
+
+/* ------------------------------------------------------- show ladder 10-16
+   Rungs 1-10 are everything a basic set can reach, and they already own the
+   bunting, the keypad colours, the spotlights, the marquee and the glowing card.
+   Rungs 11-16 belong to the modes that outlast a set. Every rule reads a rung
+   and never E, so a mode whose intensity is high from its first problem still
+   has somewhere to climb. */
+/* 10: the first pair of spots comes up to full, and warms. Named one pair at a
+   time on purpose: `body.lv10 .spot` would also light the pair rung 12 owns, and
+   then rung 12 would reveal nothing at all. */
+body.lv10 .spot-l, body.lv10 .spot-r { opacity: 1; filter: blur(1px) brightness(1.1); }
+
+/* 11: a string of bulbs on the stage lip, chasing left to right. They carry the
+   same ink ring every other control does, because a pale bulb on cream paper is
+   not a lit bulb - it is a smudge. */
+.lights { position: absolute; left: 5%; right: 5%; bottom: 10px; display: flex; justify-content: space-between; opacity: 0; transition: opacity .6s; }
+.lights i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: #ffecb0; box-shadow: 0 0 5px 1.5px rgba(255, 210, 63, .6); }
+body.lv11 .lights { opacity: 1; }
+body.lv11 .lights i { animation: bulb 1.4s ease-in-out infinite; animation-delay: calc(var(--i) * -0.12s); }
+@keyframes bulb { 50% { background: #ffcf1f; box-shadow: 0 0 13px 5px rgba(255, 210, 63, .95); } }
+
+/* 12: a second, wider pair of spots washing in from the wings. */
+.spot-l2 { left: 16%; width: 170px; transform-origin: 50% 0; animation: spot-l2 3.8s ease-in-out infinite; }
+.spot-r2 { right: 16%; width: 170px; transform-origin: 50% 0; animation: spot-r2 4.2s ease-in-out infinite; }
+body.lv12 .spot-l2, body.lv12 .spot-r2 { opacity: .85; }
+@keyframes spot-l2 { 0%, 100% { transform: rotate(12deg); } 50% { transform: rotate(-8deg); } }
+@keyframes spot-r2 { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(8deg); } }
+
+/* 13: confetti that never stops falling. One clipped element sliding by exactly
+   one tile, so it loops seamlessly and the phone only pays for a transform -
+   a particle rain would need a new sprite every second for the whole run. */
+.rain { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity .8s; pointer-events: none; }
+.rain i { position: absolute; left: 0; right: 0; top: -46px; height: calc(100% + 92px);
+  background-image:
+    radial-gradient(circle, #fff 0 2px, var(--pink) 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle, #fff 0 2px, var(--yellow) 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle, #fff 0 2px, var(--blue) 2.5px 4px, transparent 4.5px);
+  background-size: 46px 46px; background-position: 0 0, 17px 9px, 30px 31px; }
+body.lv13 .rain { opacity: .7; }
+body.lv13 .rain i { animation: rain 3.6s linear infinite; }
+@keyframes rain { from { transform: translateY(-46px); } to { transform: translateY(0); } }
+
+/* 14: the room turns gold - the card's ring, the stage edge, the keypad trim. */
+body.lv14 .card { box-shadow: 0 7px 0 var(--ink), 0 0 0 5px var(--yellow), 0 0 52px 16px rgba(255, 210, 63, calc(.4 + var(--kick) * .6)); }
+body.lv14 .ground path { stroke: var(--yellow); }
+body.lv14 .pad button { border-color: var(--ink); box-shadow: 0 5px 0 var(--ink), 0 0 0 calc(var(--kick) * 3px) rgba(255, 210, 63, .75); }
+
+/* 15: the mascot gets a pool of light to perform in - and a livelier bounce,
+   from applyLevel(), which is the only part of a rung that needs the frame loop. */
+body.lv15 .stage::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 240px; height: 78px; transform: translateX(-50%);
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 210, 63, .85), rgba(255, 210, 63, .25) 55%, transparent 75%); }
+
+/* 16: the whole room takes the beat. Sits under the actors so the characters
+   stay crisp while everything behind them breathes. The constant part matters:
+   --kick is zero for a muted or silent player, and a rung that only exists when
+   the music plays is a rung half the players never see. */
+.beat-flash { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .9), rgba(255, 210, 63, .3) 45%, transparent 78%); }
+body.lv16 .beat-flash { opacity: calc(.09 + var(--kick) * .3); }
+body.lv16 .card { box-shadow: 0 7px 0 var(--ink), 0 0 0 5px var(--pink), 0 0 0 9px var(--yellow), 0 0 64px 20px rgba(255, 122, 182, calc(.4 + var(--kick) * .5)); }
+
+/* Reduce-motion keeps the rungs legible - colour, glow, trim - and drops only
+   what moves. */
+body.reduced .lights i, body.reduced .spot-l2, body.reduced .spot-r2 { animation: none !important; }
+body.reduced .rain { opacity: 0; animation: none; }
+body.reduced .beat-flash { opacity: 0; }
 
 /* ------------------------------------------------------------ results */
 #screen-result, #screen-final { align-items: safe center; justify-content: center; padding: 20px 16px; overflow-y: auto; }

@@ -390,6 +390,13 @@ const MARIMBA = [0, 1, 2, 1, 3, 2, 1, 2];
 // then kick, bass, claps, hats, arpeggio, stabs, a lead hook and a choir as
 // the level rises; the game's tempo, key changes and reach roll apply too.
 // Melodies are original.
+//
+// Levels used to stop at 10, so a song's arrangement was complete by the choir
+// and everything after it was more of the same. Rungs 11, 13 and 15 add three
+// more turns of the same crank - a sixteenth tick, a counter-line under the
+// hook, and the whole band on it - so the top of an endless run still sounds
+// like somewhere new. Thresholds live here rather than in a shared table
+// because each song answers with its own instruments.
 const chord = (root, q, bass) => ({ root, tones: q.map((x) => 60 + root + x).map((m) => (m > 67 ? m - 12 : m)), bass: 36 + ((root + 12) % 12) });
 const DRUMS = {
   pop(e, s, bar, t, L) {
@@ -416,6 +423,10 @@ export const SONGS = {
       if (L >= 6 && (s === 2 || s === 10)) ch.tones.forEach((m) => e.play('chip', t, { m: m + 12 + k, dur: e.stepDur * 1.5, v: 0.03 }));
       if (L >= 8 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('chip', t, { m: m + k, dur: e.stepDur * 1.6, v: 0.07 }); }
       if (L >= 9 && s === 0) e.play('crash', t, { v: 0.25 });
+      if (L >= 11 && s % 2 === 1) e.play('noiseHat', t, { v: 0.04 });
+      if (L >= 13 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('tri', t, { m: m - 12 + k, dur: e.stepDur * 1.4, v: 0.05 }); }
+      if (L >= 15 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('chip', t, { m: m + 12 + k, dur: e.stepDur * 1.2, v: 0.03 }); }
+      if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.15 });
     },
   },
   matsuri: {
@@ -433,6 +444,10 @@ export const SONGS = {
       if (L >= 8 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('fue', t, { m: m + k, dur: e.stepDur * 1.8, v: 0.1 }); }
       if (L >= 9 && s === 0) e.play('choir', t, { notes: ch.tones.map((m) => m + 12 + k), dur: e.stepDur * 15, v: 0.045 });
       if (L >= 5 && bar === 3 && s >= 12) e.play('taiko', t, { v: 0.4 + (s - 12) * 0.12, m: 52 });
+      if (L >= 11 && s % 4 === 1) e.play('kane', t, { v: 0.045 });
+      if (L >= 13 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('shamisen', t, { m: m - 12 + k, dur: e.stepDur * 1.5, v: 0.05, pan: s % 4 ? -0.4 : 0.4 }); }
+      if (L >= 15 && s % 4 === 0) e.play('choir', t, { notes: ch.tones.map((m) => m + k), dur: e.stepDur * 4, v: 0.03 });
+      if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.15 });
     },
   },
   brass: {
@@ -450,6 +465,10 @@ export const SONGS = {
       if (L >= 6 && s % 4 === 2) e.play('brass', t, { notes: ch.tones.map((m) => m + 12 + k), dur: e.stepDur * 0.9, v: 0.07 });
       if (L >= 8 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('brass', t, { m: m + k, dur: e.stepDur * 1.7, v: 0.1 }); }
       if (L >= 9 && s === 0) e.play('crash', t, { v: 0.3 });
+      if (L >= 11 && s % 4 === 2) e.play('tuba', t, { m: ch.bass + k + 7, dur: e.stepDur, v: 0.18 });
+      if (L >= 13 && s % 4 === 1) e.play('brass', t, { notes: ch.tones.map((m) => m + 7 + k), dur: e.stepDur * 0.7, v: 0.05 });
+      if (L >= 15 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('brass', t, { m: m - 12 + k, dur: e.stepDur * 1.6, v: 0.06 }); }
+      if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.15 });
     },
   },
   electro: {
@@ -468,6 +487,10 @@ export const SONGS = {
       if (L >= 8 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('lead', t, { m: m + k, dur: e.stepDur * 1.5, v: 0.075 }); }
       if (L >= 9 && s === 0) e.play('pad', t, { notes: ch.tones.map((m) => m + 12 + k), dur: e.stepDur * 15, v: 0.06, bright: 3000 });
       if (L >= 5 && bar === 3 && s >= 8) e.play('snare', t, { v: 0.12 + (s - 8) * 0.06 });
+      if (L >= 11 && s % 2 === 1) e.play('saw', t, { m: ch.tones[s % 3] + 24 + k, dur: e.stepDur * 0.4, v: 0.02, bright: 2400 + 200 * L });
+      if (L >= 13 && s % 4 === 1) e.play('lead', t, { m: ch.tones[s % 3] + 19 + k, dur: e.stepDur * 1.2, v: 0.04 });
+      if (L >= 15) e.play('pad', t, { notes: ch.tones.map((m) => m + k), dur: e.stepDur * 3, v: 0.02 });
+      if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.2 });
     },
   },
 };
@@ -632,6 +655,11 @@ export class AudioEngine {
     if (L >= 9 && s === 0) this.play('choir', t, { notes: ch.tones.map((m) => m + 12 + k), dur: this.stepDur * 15, v: 0.05 });
     if (L >= 9 && s === 0 && bar === 0) this.play('crash', t, { v: 0.3 });
     if (L >= 5 && bar === 3 && s >= 12) this.play('snare', t, { v: 0.2 + (s - 12) * 0.1 });
+    // Rungs 11-15, the same way: a tick, a counter-line, then the band on the hook.
+    if (L >= 11 && s % 2 === 1) this.play('shaker', t, { v: 0.03 });
+    if (L >= 13 && s % 2 === 0) { const m = HOOK[bar][s / 2]; if (m) this.play('pluck', t, { m: m - 12 + k, dur: this.stepDur * 1.4, v: 0.05 }); }
+    if (L >= 15 && s % 2 === 0) { const m = HOOK[bar][s / 2]; if (m) this.play('choir', t, { notes: [m, m + 7], dur: this.stepDur * 2, v: 0.035 }); }
+    if (L >= 15 && s === 0 && bar === 3) this.play('impact', t, { v: 0.18 });
   }
 
   // Beat info for visuals: phase within the current beat and a kick pulse.

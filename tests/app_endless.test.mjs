@@ -8,7 +8,8 @@ import { emptyProgress, masterWithAncestors, isUnlocked, skillRecord } from '../
 import { extraPoints } from '../app/js/scoring.js';
 import {
   LIVES, LIFE_EVERY, WAVE_EVERY, MIX_FROM_WAVE, MIX_MIN_GRADE,
-  newRun, waveOf, gradeOf, intensity, noteSolved, noteMiss, pickSkill, plan,
+  newRun, waveOf, gradeOf, intensity, tierOf, BASE_TIER, TIER_MAX, E_MAX,
+  noteSolved, noteMiss, pickSkill, plan,
 } from '../app/js/endless.js';
 
 test('a run starts with three lives and nothing done', () => {
@@ -89,7 +90,29 @@ test('the show climbs with the wave, and keeps climbing after the grade stops', 
   assert.ok(intensity(1) < intensity(5));
   assert.ok(intensity(5) < intensity(10));
   assert.ok(intensity(10) < intensity(20));
-  assert.ok(intensity(20) <= 7, 'bounded, so nothing runs away');
+  // Bounded, because this number is read straight into particle counts and
+  // speeds: the previous unbounded version asked for 48 firework shells at a
+  // wave a good run reaches.
+  assert.ok(intensity(20) <= E_MAX, 'bounded, so nothing runs away');
+});
+
+test('the wave count climbs the ladder instead of pinning it', () => {
+  assert.equal(tierOf(1), BASE_TIER, 'a run starts where a basic set ended');
+  assert.equal(tierOf(2), BASE_TIER);
+  assert.equal(tierOf(3), BASE_TIER + 1);
+  let prev = tierOf(1);
+  for (let w = 1; w <= 40; w++) {
+    const rung = tierOf(w);
+    assert.ok(rung >= prev, `rung must not fall back at wave ${w}`);
+    assert.ok(rung <= TIER_MAX, `rung must stop at the ceiling, wave ${w}`);
+    if (w > 2) assert.ok(rung >= prev, 'never walks backwards');
+    prev = rung;
+  }
+  assert.equal(tierOf(40), TIER_MAX, 'the top is reachable, and stays put');
+  // Reaching it is a real run, not a formality: the waves are first-try solves.
+  const waveAtTop = 1 + (TIER_MAX - BASE_TIER) * 2;
+  assert.equal(tierOf(waveAtTop), TIER_MAX);
+  assert.equal(tierOf(waveAtTop - 1), TIER_MAX - 1, 'and it is the wave before that tops out');
 });
 
 // ---------------------------------------------------------------- selection

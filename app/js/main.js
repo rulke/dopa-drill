@@ -21,7 +21,7 @@ import * as ul from './unlocks.js';
 import * as slips from './slips.js';
 import * as report from './report.js';
 import * as endless from './endless.js';
-import { BASIC_SCORE, extraPoints, basicDopaL, extraProblemGain, addDopa, comboMult, comboMaxed, comboWindowMs, comboMilestone, fmtDopa, unitOf, unitLabel } from './scoring.js';
+import { BASIC_SCORE, extraPoints, basicDopaL, extraProblemGain, endlessProblemGain, addDopa, comboMult, comboMaxed, comboWindowMs, comboMilestone, fmtDopa, unitOf, unitLabel, DOPA_MAX_L, ENDLESS_DOPA_MAX_L } from './scoring.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -101,8 +101,13 @@ function openGuide(help = false) {
 // ---------------------------------------------------------------- utilities
 const fmtTime = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
+// The show's ladder. Rungs 1-10 are a basic set's arc (E runs 0.08..1 across the
+// problem count); 11-16 belong to the modes that outlast one. Every visual tier,
+// the crowd and the arrangement hang off this number.
+const LEVEL_MAX = 16;
+
 function setLevelClasses(L) {
-  for (let i = 0; i <= 10; i++) body.classList.toggle(`lv${i}`, i <= L);
+  for (let i = 0; i <= LEVEL_MAX; i++) body.classList.toggle(`lv${i}`, i <= L);
 }
 
 function showScreen(name) {
@@ -299,15 +304,20 @@ function sessionProblem(skill) {
 
 function basicE(i) { return S.N <= 1 ? 1 : 0.08 + 0.92 * (i / (S.N - 1)) ** 1.3; }
 
-function applyLevel(E, { key, bpm } = {}) {
+function applyLevel(E, { key, bpm, tier } = {}) {
   S.E = E;
-  const L = Math.min(10, Math.round(E * 10));
+  // A mode whose length is counted rather than measured names its own rung.
+  // Endless does: deriving the level from its intensity pinned the ladder at the
+  // ceiling by wave 5, so the last eleven waves looked exactly like the fifth.
+  const L = clamp(tier === undefined ? Math.round(E * 10) : Math.round(tier), 0, LEVEL_MAX);
   S.level = L;
   setLevelClasses(L);
   if (key !== undefined) audio.key = key;
   audio.setLevel(L, bpm || 112 + 16 * Math.min(1, E));
-  hero.bob = clamp(E * 1.4);
-  ensureCrowd(E);
+  // Rungs 1-10 keep the mascot's bounce exactly as it was; above them it keeps
+  // growing, which is the loudest thing a tier can do without new artwork.
+  hero.bob = clamp(E * 1.4) * (1 + 0.15 * Math.max(0, L - 10));
+  ensureCrowd(L);
 }
 
 function renderSheet(p) {
@@ -453,7 +463,7 @@ async function setupProblem() {
   if (endlessRun) {
     renderLives();
     E = endless.intensity(S.endless.wave);
-    applyLevel(E, { key: 0, bpm: 128 + Math.min(6, S.endless.wave) });
+    applyLevel(E, { key: 0, bpm: 128 + Math.min(6, S.endless.wave), tier: endless.tierOf(S.endless.wave) });
     S.problem = S.problems[S.qi] || (S.problems[S.qi] = nextProblem(S.qi));
   } else if (extra) {
     const tier = Math.floor(S.extra.solved / 3);
@@ -610,12 +620,17 @@ function reveal(ids, fromCell) {
   });
 }
 
-function burstKinds(E) {
+// Which particles a hit throws. Keyed to the rung rather than to E so the mix
+// keeps getting richer above the old ceiling: past rung 11 the same burst is
+// denser with the good stuff instead of merely faster.
+function burstKinds(L) {
   const k = ['confetti'];
-  if (E > 0.18) k.push('star');
-  if (E > 0.4) k.push('spark', 'spark');
-  if (E > 0.58) k.push('coin');
-  if (E > 0.72) k.push('mini', 'heart');
+  if (L >= 2) k.push('star');
+  if (L >= 4) k.push('spark', 'spark');
+  if (L >= 6) k.push('coin');
+  if (L >= 8) k.push('mini', 'heart');
+  if (L >= 12) k.push('star', 'coin');
+  if (L >= 15) k.push('mini', 'heart', 'star', 'spark');
   return k;
 }
 
@@ -626,8 +641,8 @@ function onCorrect(st, cell, last) {
   cell.classList.add('ok');
   reveal(st.after || [], cell);
   if (!S.reduced) {
-    fx.burst(c.x, c.y, { count: Math.round(6 + 22 * E), speed: 260 + 260 * E, kinds: burstKinds(E).filter((k) => k !== 'mini' && k !== 'coin'), up: 120, life: 0.55 });
-    if (E > 0.35) fxBack.burst(c.x, c.y, { count: Math.round(30 * E), speed: 700, kinds: burstKinds(E), up: 200 });
+    fx.burst(c.x, c.y, { count: Math.round(6 + 22 * E), speed: 260 + 260 * E, kinds: burstKinds(S.level).filter((k) => k !== 'mini' && k !== 'coin'), up: 120, life: 0.55 });
+    if (E > 0.35) fxBack.burst(c.x, c.y, { count: Math.round(30 * E), speed: 700, kinds: burstKinds(S.level), up: 200 });
     fx.ring(c.x, c.y, { color: E > 0.5 ? '#ffd23f' : '#ff7ab6', radius: 40 + 60 * E, width: 6 });
     if (E > 0.5) S.shake = Math.max(S.shake, 2 + 3 * E);
   }
@@ -811,9 +826,9 @@ function celebrate(E, big, lastBasic) {
   hero.celebrate(Math.min(1, E), { big: E > 0.5 || big, audio });
   crowd.forEach((m, i) => setTimeout(() => m.celebrate(Math.min(1, E), { big: E > 0.8 }), 60 * i));
   const n = Math.round(18 + 80 * Math.min(1.2, E) + (big ? 50 : 0));
-  fx.burst(cx, cy, { count: n, speed: 500 + 500 * E, kinds: burstKinds(E), up: 250, life: 0.6 });
+  fx.burst(cx, cy, { count: n, speed: 500 + 500 * E, kinds: burstKinds(S.level), up: 250, life: 0.6 });
   fx.ring(cx, cy, { color: '#ffd23f', radius: 120 + 200 * E, width: 10 });
-  if (E > 0.25) fxBack.burst(cx, cy, { count: Math.round(100 * Math.min(1.2, E)), speed: 900 + 400 * E, kinds: burstKinds(E), up: 400 });
+  if (E > 0.25) fxBack.burst(cx, cy, { count: Math.round(100 * Math.min(1.2, E)), speed: 900 + 400 * E, kinds: burstKinds(S.level), up: 400 });
   if (E > 0.3) fx.streamers(W, H, Math.round(2 + 6 * E));
   if (E > 0.5) { fxBack.fireworks(W, H, Math.round(2 + 6 * E) + (big ? 4 : 0), 0.06, 0.3); S.flash = Math.max(S.flash, 0.25 * E); }
   if (E > 0.62) fxBack.rain(W, Math.round(20 + 30 * E), { kinds: ['confetti', 'confetti', 'mini', 'coin'] });
@@ -958,13 +973,17 @@ function bumpDopa(cell) {
   const n = S.problem.steps.length;
   // No-combo step for this answer cell; the combo scales it up a little.
   // The endless run has no total, so the basic curve's "how far through are we"
-  // has nothing to divide by: it divides by S.endless.solved and uses the extra
-  // stage's ramp instead. Left on the basic branch it would divide by zero,
-  // turn the whole figure into NaN, and print as a plausible-looking infinity.
-  const base = S.mode === 'endless' ? extraProblemGain(S.endless.solved) / n
+  // has nothing to divide by: it divides by S.endless.solved and uses its own
+  // ramp instead. Left on the basic branch it would divide by zero, turn the
+  // whole figure into NaN, and print as a plausible-looking infinity.
+  const base = S.mode === 'endless' ? endlessProblemGain(S.endless.solved) / n
     : S.mode === 'extra' ? extraProblemGain(S.extra.solved) / n
       : basicDopaL((S.qi + S.step / n) / S.N) - basicDopaL((S.qi + (S.step - 1) / n) / S.N);
-  S.dopa.L = addDopa(prev, base, S.combo);
+  // The extra stage ends inside a round, so its ceiling keeps the figure sane.
+  // An endless run has no end: capping it there would freeze the number partway
+  // through and quietly contradict the show ladder climbing above it.
+  const cap = S.mode === 'endless' ? ENDLESS_DOPA_MAX_L : DOPA_MAX_L;
+  S.dopa.L = addDopa(prev, base, S.combo, cap);
   const E = S.E;
   if (E > 0.12 && !S.reduced) {
     const gain = S.dopa.L + Math.log10(1 - 10 ** (prev - S.dopa.L));
@@ -1104,11 +1123,20 @@ async function parade(E, big) {
   }
 }
 
-function ensureCrowd(E) {
+// The house fills up as the rungs go by. Keyed to the rung rather than to E: an
+// endless run's E starts above every threshold at once, so the old rule filled
+// every seat before the first problem and the room had nothing left to promise.
+const CROWD_ROWS = [
+  { off: 0.20, up: 0, s: 0.46 },
+  { off: 0.06, up: 18, s: 0.46 },
+  { off: 0.115, up: 34, s: 0.34 },
+];
+function ensureCrowd(L) {
   const want = [];
-  if (E >= 0.45) want.push({ i: 0, side: -1, s: 0.46 });
-  if (E >= 0.68) want.push({ i: 1, side: 1, s: 0.46 });
-  if (E >= 0.88) want.push({ i: 2, side: -1.9, s: 0.36 }, { i: 3, side: 1.9, s: 0.36 });
+  if (L >= 5) want.push({ i: 0, side: -1, s: CROWD_ROWS[0].s });
+  if (L >= 7) want.push({ i: 1, side: 1, s: CROWD_ROWS[0].s });
+  if (L >= 9) want.push({ i: 2, side: -1.9, s: CROWD_ROWS[1].s }, { i: 3, side: 1.9, s: CROWD_ROWS[1].s });
+  if (L >= 13) want.push({ i: 4, side: -2.8, s: CROWD_ROWS[2].s }, { i: 5, side: 2.8, s: CROWD_ROWS[2].s });
   if (S.reduced || S.motion < 0.5) want.length = 0;
   while (crowd.length > want.length) { const m = crowd.pop(); m.destroy(); actors.splice(actors.indexOf(m), 1); }
   for (let i = crowd.length; i < want.length; i++) {
@@ -1128,9 +1156,13 @@ function placeCrowd(m, i) {
   if (S.screen !== 'play') { m.visible = false; return; }
   m.visible = true;
   const r = stage.getBoundingClientRect();
-  const off = Math.abs(m.side) > 1.5 ? 0.06 : 0.2;
-  const x = m.side < 0 ? r.left + r.width * off : r.right - r.width * off;
-  m.place(x, r.bottom - 12 - (Math.abs(m.side) > 1.5 ? 18 : 0));
+  // The row is carried by the side's magnitude. Deeper rows sit further back and
+  // their seats come in from the edge, so six fans read as a crowd rather than
+  // as two people standing behind two people.
+  const row = clamp(Math.floor((Math.abs(m.side) - 1) / 0.9 + 0.5), 0, CROWD_ROWS.length - 1);
+  const seat = CROWD_ROWS[row];
+  const x = m.side < 0 ? r.left + r.width * seat.off : r.right - r.width * seat.off;
+  m.place(x, r.bottom - 12 - seat.up);
   void i;
 }
 
@@ -1738,7 +1770,7 @@ function setMotion(v, { persist = true } = {}) {
   sl.value = Math.round(S.motion * 100);
   sl.style.setProperty('--v', S.motion);
   $('#motion-val').textContent = `${Math.round(S.motion * 100)}%`;
-  ensureCrowd(S.E);
+  ensureCrowd(S.level);
   if (persist) store.updateSettings({ motion: S.motion });
 }
 function setMuted(m, { persist = true } = {}) {
@@ -2811,7 +2843,7 @@ function motionSliderFx(v) {
   const x = sl.left + 16 + (sl.width - 32) * v; const y = sl.top + sl.height / 2;
   audio.play('blip', audio.now(), { m: 60 + Math.round(v * 24), v: 0.05 + 0.08 * v });
   if (v <= 0.001) { hero.setFace('closed', 'smile'); setTimeout(() => hero.resetFace(), 500); return; }
-  fx.burst(x, y, { count: Math.round(2 + 26 * v), speed: 160 + 520 * v, kinds: burstKinds(v), up: 120, life: 0.5 });
+  fx.burst(x, y, { count: Math.round(2 + 26 * v), speed: 160 + 520 * v, kinds: burstKinds(Math.round(v * 10)), up: 120, life: 0.5 });
   if (v > 0.5) fx.ring(x, y, { color: v > 0.85 ? '#ffd23f' : '#ff7ab6', radius: 20 + 50 * v, width: 5 });
   S.shake = Math.max(S.shake, 6 * v * v);
   if (v > 0.9) S.flash = Math.max(S.flash, 0.25);
@@ -2987,6 +3019,14 @@ addEventListener('resize', () => requestAnimationFrame(() => {
     s += `<path d="M${x - 10} ${y - 2} L${x + 10} ${y - 1} L${x} ${y + 14}Z" fill="${cols[i % 5]}" stroke="#1b1d4d" stroke-width="2" stroke-linejoin="round"/>`;
   }
   g.innerHTML = s;
+})();
+
+// Footlights for rung 11. The chase is a negative delay per bulb, so the string
+// is already lit when the rung arrives instead of starting a wave from the left.
+(() => {
+  const box = $('#lights');
+  if (!box) return;
+  box.innerHTML = Array.from({ length: 11 }, (_, i) => `<i style="--i:${i}"></i>`).join('');
 })();
 
 // The logo is per-character spans so each locale can restyle the cut-out

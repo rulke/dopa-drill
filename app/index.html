@@ -154,9 +154,16 @@
         <div class="combo" id="combo-box" aria-hidden="true"><b id="combo">0</b><small data-i18n="连击">连击</small><span class="combo-mult" id="combo-mult"></span><i class="combo-track"><i id="combo-bar"></i></i></div>
         <div class="dopa" id="dopa-box"><small data-i18n="多巴">多巴</small><b id="dopa">0</b></div>
       </div>
+      <!-- The room's decoration. Each piece is wired to one rung of the show's
+           ladder (levels 10-16); see the lv* rules in style.css. -->
       <div class="stage" id="stage" aria-hidden="true">
         <svg class="bunting" viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0 4 Q200 34 400 4" fill="none" stroke="#1b1d4d" stroke-width="2.5"/><g id="flags"></g></svg>
-        <div class="spot spot-l"></div><div class="spot spot-r"></div>
+        <div class="spots">
+          <div class="spot spot-l"></div><div class="spot spot-r"></div>
+          <div class="spot spot-l2"></div><div class="spot spot-r2"></div>
+        </div>
+        <div class="lights" id="lights"></div>
+        <div class="rain"><i></i></div>
         <svg class="ground" viewBox="0 0 400 20" preserveAspectRatio="none"><path d="M4 12 Q60 6 120 11 T240 10 T396 12" fill="none" stroke="#1b1d4d" stroke-width="3" stroke-linecap="round"/></svg>
       </div>
       <section class="card" id="card" aria-labelledby="qtitle">
@@ -173,6 +180,7 @@
         <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
         <button type="button" data-key="Backspace" class="del" data-i18n-aria="删除一位" aria-label="删除一位">⌫</button><button type="button" data-key="0" class="zero">0</button>
       </div>
+      <div class="beat-flash" aria-hidden="true"></div>
     </section>
 
     <!-- Basic result -->
