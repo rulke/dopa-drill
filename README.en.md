@@ -1,5 +1,7 @@
 # Dopa Drill (多巴胺口算)
 
+[中文](README.md) | **English** | [日本語](README.ja.md)
+
 A math drill where the show and the music keep escalating with every problem you solve. Runs entirely in the browser.
 
 The mascot "Dopakichi" carries the digits you type and celebrates every correct answer. The further you get, the busier the screen and the music become — the last problem ends in a full-on festival. Wrong answers never kill the momentum, and there is no game over.
@@ -105,18 +107,7 @@ node tools/build_fonts.mjs  # rebuild the Chinese font subsets (cd tools && npm 
 ## License
 
 - Source code: MIT License
-- The character "Dopakichi" and the names/logos "Dopa Drill / 多巴胺口算 / ドパドリル": excluded from the MIT grant. Free for non-commercial fan works (below)
+- The character "Dopakichi" and the names/logos "Dopa Drill / 多巴胺口算 / ドパドリル": excluded from the MIT grant. Free for non-commercial fan works
 - Fonts (`app/fonts/`): SIL Open Font License 1.1
 
 See [LICENSE](LICENSE) for details.
-
-### Derivative works
-
-Non-commercial use needs no permission or contact.
-
-- Allowed: fan art, comics, novels, animation, videos, social media posts, and publishing non-commercial forks or modified versions of this game
-- Play videos and streams: free, including on platforms with ad revenue or tipping
-- Permission required: selling goods or works, use in paid products/services/advertising, using the character or name for other products, services or brands, or presenting it as official
-- Forbidden: uses that violate public order and morals or harm the reputation of the character or this project
-
-When publishing, make it clear that your work is unofficial. If translations of LICENSE differ from the English text, the English text prevails.
