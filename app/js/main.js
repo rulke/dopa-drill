@@ -18,6 +18,7 @@ import * as qs from './quests.js';
 import * as tr from './trophies.js';
 import { trophyName, trophyDesc, seriesTitle } from './trophies.js';
 import * as ul from './unlocks.js';
+import * as slips from './slips.js';
 import { BASIC_SCORE, extraPoints, basicDopaL, extraProblemGain, addDopa, comboMult, comboMaxed, comboWindowMs, comboMilestone, fmtDopa, unitOf, unitLabel } from './scoring.js';
 
 const $ = (s) => document.querySelector(s);
@@ -493,7 +494,7 @@ function press(key, btn = padButtons[key]) {
     cell.classList.add('bad', 'has', 'pending');
     cell.textContent = key;
     S.shownWrong = key;
-    carry(from, cell, key, () => { cell.classList.remove('pending'); onWrong(cell, st); });
+    carry(from, cell, key, () => { cell.classList.remove('pending'); onWrong(cell, st, key); });
   }
 }
 
@@ -579,7 +580,8 @@ function onCorrect(st, cell, last) {
   if (last) clearProblem();
 }
 
-function onWrong(cell, st) {
+function onWrong(cell, st, typed) {
+  noteSlipFor(st, typed);
   const E = S.E;
   audio.wrong(E);
   const c = centerOf(cell);
@@ -597,6 +599,24 @@ function onWrong(cell, st) {
     if (E > 0.5) { S.shake = Math.max(S.shake, 8); S.flash = Math.max(S.flash, 0.12); }
     crowd.forEach((m) => { m.setFace('wide', 'o'); m.sq.kick(-3); setTimeout(() => m.resetFace(), 600); });
   }, t * 1000);
+}
+
+// Name the cause of a wrong digit, if the digit proves one, and count it
+// against the skill. Collection only - nothing shows it yet, so the classifier
+// can be judged on real play before any report quotes it.
+//
+// No save here: the count lands in the in-memory progress and the next finished
+// problem writes it out (noteProblem ends with store.save). Saving on the
+// keystroke would serialise the whole save - history included - from inside the
+// carry animation, and a slip on an abandoned problem is not worth a dropped
+// frame.
+function noteSlipFor(st, typed) {
+  if (S.demo || !recording()) return;
+  const p = S.problem;
+  if (!p || !p.skill || !SKILL[p.skill]) return;
+  try {
+    slips.noteSlip(progress(), p.skill, slips.classifySlip(st, typed, p), store.dayKey());
+  } catch { /* attribution must never break a round */ }
 }
 
 // Repeated slips on the same digit: 2nd highlights the digits to look at

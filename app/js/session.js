@@ -57,6 +57,11 @@ export function emptyProgress() { return { placed: false, skills: {}, review: []
 
 const rec = (prog, id) => prog.skills[id] || (prog.skills[id] = { n: 0, hist: [], mastered: false, recent: [] });
 
+// The same record, for callers outside this module that need somewhere to keep
+// per-skill data before the first problem of that skill has been finished
+// (slips.js does: a wrong digit can arrive before any completed problem).
+export const skillRecord = rec;
+
 export const isMastered = (prog, id) => !!(prog.skills[id] && prog.skills[id].mastered);
 export const isUnlocked = (prog, id) => SKILL[id].req.every((r) => isMastered(prog, r));
 
