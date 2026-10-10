@@ -82,6 +82,7 @@ node --test tests/*.test.mjs
 | `app/icons/` | 主屏图标（由 `tools/build_icons.mjs` 从 `app/icon.svg` 生成） |
 | `docs/SPEC.md` | 说明书（中文）；`SPEC.ja.md` 为日文版 |
 | `docs/curriculum.md` | 各年级课程与技能树设计（中文）；`curriculum.ja.md` 为日文版 |
+| `docs/DESIGN.md` | 下一步功能的详细设计稿（中文，尚未实现）：无尽模式、成长页与错因归因 |
 | `docs/dopakichi.svg` | 多巴奇造型的原稿 |
 | `mobile/` | Capacitor 原生壳（不参与 web 版本运行） |
 | `tests/` | 单元测试 |

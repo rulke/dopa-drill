@@ -86,6 +86,7 @@ node --test tests/*.test.mjs
 | `app/icons/` | ホーム画面アイコン（`tools/build_icons.mjs` が `app/icon.svg` から生成） |
 | `docs/SPEC.md` | 仕様書（中国語）。`SPEC.ja.md` は日本語版 |
 | `docs/curriculum.md` | 学年別カリキュラムとスキルツリーの設計（中国語）。`curriculum.ja.md` は日本語版 |
+| `docs/DESIGN.md` | 次の機能の詳細設計（中国語、未実装）：エンドレスモード、成長ページ、誤りの要因分析 |
 | `docs/dopakichi.svg` | ドパキチの造形の原典 |
 | `mobile/` | Capacitor のネイティブシェル（Web版の動作には関与しません） |
 | `tests/` | 単体テスト |

@@ -87,6 +87,7 @@ node --test tests/*.test.mjs
 | `app/icons/` | Home screen icons, generated from `app/icon.svg` by `tools/build_icons.mjs` |
 | `docs/SPEC.md` | Specification (Chinese); `SPEC.ja.md` is the Japanese original |
 | `docs/curriculum.md` | Curriculum and skill tree design (Chinese); `curriculum.ja.md` is the Japanese original |
+| `docs/DESIGN.md` | Detailed design for the next features (Chinese, not implemented yet): endless mode, the growth page and error attribution |
 | `docs/dopakichi.svg` | The original Dopakichi artwork |
 | `mobile/` | The Capacitor shell (not used by the web build) |
 | `tests/` | Unit tests |
