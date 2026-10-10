@@ -15,6 +15,7 @@
 import { dayKey } from './store.js';
 import { SKILLS, SKILL } from './skills.js';
 import { stateOf, starsOf, STAR_MAX, RUST, rustClock } from './session.js';
+import { slipTotals, slipSkills } from './slips.js';
 
 export const RETAIN_DAYS = RUST.days; // 21, the same threshold the rust marker uses
 const DAY = 864e5;
@@ -120,6 +121,39 @@ export function lastPractice(history, today) {
   return { day: last, daysAgo: Math.round((b - a) / DAY) };
 }
 
+// Where a child keeps slipping, and what to do about it.
+//
+// The recommendation is data-driven rather than a hand-written table of
+// "carry errors -> practise carrying": the skill named is the one where that
+// cause actually happens most, so the advice is about the problems they really
+// got wrong rather than about a category.
+//
+// Coverage is reported alongside, because it is the honest half of the story.
+// Only proved slips are named, and a page listing three causes without saying
+// how many slips went unexplained would read as more complete than it is.
+export function slips(prog, { day, days = 30, limit = 3 } = {}) {
+  const totals = slipTotals(prog || { skills: {} }, { day, days });
+  const all = Object.values(totals).reduce((a, b) => a + b, 0);
+  const unexplained = totals.unclassified || 0;
+  const top = Object.entries(totals)
+    .filter(([cause]) => cause !== 'unclassified')
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([cause, n]) => {
+      const worst = slipSkills(prog, cause, { limit: 1 })[0];
+      return { cause, n, skill: worst ? worst.skill : null };
+    });
+  return {
+    days,
+    total: all,
+    explained: all - unexplained,
+    unexplained,
+    top,
+    // The skill to practise: where the worst cause bites.
+    next: (top[0] && top[0].skill) || null,
+  };
+}
+
 // Everything the page needs, in one call. `streaks` comes from store.js because
 // it needs the no-count days the hammer writes.
 export function build(state, today, streaks) {
@@ -129,6 +163,7 @@ export function build(state, today, streaks) {
     mastery: mastery(state.progress, today),
     retention: retention(state.progress, today),
     last: lastPractice(state.history, today),
+    slips: slips(state.progress, { day: today }),
     streak: streaks,
   };
 }

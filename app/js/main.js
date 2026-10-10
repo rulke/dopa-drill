@@ -2363,6 +2363,17 @@ function renderTrophyList() {
 // with anyone else, and nothing hidden from the child.
 const fmtMinutes = (n) => fmtNum(n);
 
+// What each attributed cause is called on the page. slips.js knows the ids and
+// nothing about wording.
+const SLIP_LABEL = {
+  carry: () => t('忘了进位'),
+  borrowZero: () => t('跨零退位'),
+  borrowMiss: () => t('该退位却大减小'),
+  swap: () => t('把积的十位写成了个位'),
+  wrongFactor: () => t('乘错了乘数位'),
+};
+const slipLabel = (cause) => (SLIP_LABEL[cause] ? SLIP_LABEL[cause]() : cause);
+
 function growthHtml(r) {
   const m = r.mastery;
   const ret = r.retention;
@@ -2406,6 +2417,26 @@ function growthHtml(r) {
          </ul>
          ${rustyChips ? `<p class="gh-sub" style="margin-top:8px">${t('有点生锈的')}</p><ul class="gh-chips">${rustyChips}</ul>` : ''}`);
 
+  // ④ where it goes wrong. The coverage line is not decoration: only proved
+  // slips are named, and without it the list would read as the whole story.
+  const sl = r.slips;
+  const slipRows = sl.top.map((x) => `<li><span class="k">${slipLabel(x.cause)}</span><span class="v">${x.n}<small>${t('次')}</small></span></li>`).join('');
+  const slipCard = `<h3>${t('哪里卡住')}</h3>`
+    + (sl.top.length
+      ? `<ul class="gh-rows">${slipRows}</ul>
+         ${sl.top[0].skill ? `<p class="gh-sub" style="margin-top:8px">${t('最常出现在「{skill}」', { skill: skillName(sl.top[0].skill) })}</p>` : ''}
+         <p class="gh-sub" style="margin-top:6px">${t('已归因 {a} 次 / 共 {b} 次', { a: sl.explained, b: sl.total })}</p>`
+      : `<p class="gh-empty">${t('再多练几天就能看到')}</p>`);
+
+  // ⑥ the one thing to do next. With no mistakes attributed yet it falls back to
+  // the skill the level mode would pick, so the card is never empty.
+  const nextSkill = sl.next || frontier(progress())[0] || ORDER[ORDER.length - 1];
+  const nextCard = nextSkill
+    ? `<h3>${t('下一步')}</h3>
+       <p class="gh-sub">${sl.next ? t('这个最容易卡住，再练一次看看') : t('接下来练这个')}</p>
+       <button type="button" class="sub-btn gh-go" id="gh-go" data-skill="${nextSkill}">${t('练「{skill}」', { skill: skillName(nextSkill) })}</button>`
+    : '';
+
   // ⑤ showing up
   const streakCard = `<h3>${t('坚持')}</h3>
     <ul class="gh-rows">
@@ -2416,7 +2447,9 @@ function growthHtml(r) {
   return `<div class="gh-card">${weekCard}</div>
     <div class="gh-card">${masteryCard}</div>
     <div class="gh-card">${retainCard}</div>
-    <div class="gh-card">${streakCard}</div>`;
+    <div class="gh-card">${slipCard}</div>
+    <div class="gh-card">${streakCard}</div>
+    ${nextCard ? `<div class="gh-card">${nextCard}</div>` : ''}`;
 }
 
 // Named ...Page to stay clear of renderGrowth(el), which draws the growth
@@ -2445,6 +2478,15 @@ function startEndless() {
   audio.unlock();
   audio.play('blip', audio.now(), { m: 76, v: 0.12 });
   startGame('endless');
+}
+
+// The one action the page offers. It leaves the report and starts the skill,
+    // which is the point of having a recommendation at all.
+function practiceFromGrowth(skill) {
+  if (!skill || !SKILL[skill]) return;
+  audio.unlock();
+  audio.play('blip', audio.now(), { m: 84, v: 0.12 });
+  startGame('practice', skill);
 }
 
 function openGrowth() {
@@ -2821,6 +2863,12 @@ $('#endless').addEventListener('click', startEndless);
 $('#e-again').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.12 }); startEndless(); });
 $('#e-title').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
 $('#open-growth').addEventListener('click', openGrowth);
+// Delegated: the report is rebuilt on every open, so a direct binding would go
+// stale with the button it was made for.
+$('#gh').addEventListener('click', (e) => {
+  const b = e.target.closest('#gh-go');
+  if (b) practiceFromGrowth(b.dataset.skill);
+});
 $('#growth-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
 $('#growth-print').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.1 }); print(); });
 $$('.tr-filter button').forEach((b) => b.addEventListener('click', () => { trFilter.f = b.dataset.f; $$('.tr-filter button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); audio.play('blip', audio.now(), { m: 80, v: 0.08 }); renderTrophyList(); }));

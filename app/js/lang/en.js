@@ -329,4 +329,19 @@ export const en = {
   '无尽模式打到第{n}波': 'Reach wave {n} in endless mode',
   '在无尽模式里累计答对{n}题': 'Answer {n} problems in endless mode',
 
+  // growth page: mistakes
+  '哪里卡住': 'Where it goes wrong',
+  '下一步': 'Next step',
+  '忘了进位': 'forgot the carry',
+  '跨零退位': 'borrowed through a zero',
+  '该退位却大减小': 'took the smaller from the larger',
+  '把积的十位写成了个位': 'wrote the tens digit of a product',
+  '乘错了乘数位': 'multiplied by the wrong digit',
+  '最常出现在「{skill}」': 'most often in {skill}',
+  '已归因 {a} 次 / 共 {b} 次': '{a} of {b} slips explained',
+  '再多练几天就能看到': 'A few more days of practice and this will fill in',
+  '这个最容易卡住，再练一次看看': 'This is where it catches most - try it once more',
+  '接下来练这个': 'Practise this next',
+  '练「{skill}」': 'Practise {skill}',
+
 };

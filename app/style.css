@@ -467,6 +467,9 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 .endless-btn small { font-size: 11px; letter-spacing: 0; opacity: .85; }
 #screen-endless { flex-direction: column; justify-content: center; }
 
+/* The report's one action button, sized to its text. */
+.gh-go { margin-top: 8px; min-width: 0; width: 100%; max-width: none; padding: 0 12px; font-size: 15px; font-weight: 900; background: #ffefd6; }
+
 /* On paper the cards should not each carry a drop shadow, and the screen
    chrome has no meaning. */
 @media print {

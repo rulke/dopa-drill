@@ -2,7 +2,8 @@
 // parent, so the tests are about the definitions as much as the arithmetic.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { weekStart, weekDays, week, mastery, retention, lastPractice, barLabelKey, RETAIN_DAYS } from '../app/js/report.js';
+import { weekStart, weekDays, week, mastery, retention, lastPractice, barLabelKey, slips, build, RETAIN_DAYS } from '../app/js/report.js';
+import { noteSlip } from '../app/js/slips.js';
 import { emptyProgress, skillRecord } from '../app/js/session.js';
 import { SKILLS } from '../app/js/skills.js';
 import { STAR_MAX } from '../app/js/session.js';
@@ -149,4 +150,68 @@ test('the neglected list never carries an unnamed skill', () => {
   const r = skillRecord(prog, 'not-a-skill');
   r.mastered = true; r.masteredAt = new Date(2026, 0, 1).getTime();
   assert.deepEqual(retention(prog, '2026-10-10').rusty, []);
+});
+
+// ---------------------------------------------------------------- slips
+
+test('the worst causes come back in order, with the skill they bite in', () => {
+  const prog = emptyProgress();
+  const day = '2026-10-10';
+  noteSlip(prog, SKILLS[0].id, 'carry', day);
+  noteSlip(prog, SKILLS[0].id, 'carry', day);
+  noteSlip(prog, SKILLS[1].id, 'borrowZero', day);
+  noteSlip(prog, SKILLS[2].id, 'swap', day);
+
+  const s = slips(prog, { day });
+  assert.deepEqual(s.top.map((x) => x.cause), ['carry', 'borrowZero', 'swap']);
+  assert.equal(s.top[0].n, 2);
+  assert.equal(s.top[0].skill, SKILLS[0].id, 'the skill where that cause happens most');
+  assert.equal(s.next, SKILLS[0].id, 'and that is what to practise next');
+});
+
+test('the skill named is the one the cause actually happens in', () => {
+  const prog = emptyProgress();
+  const day = '2026-10-10';
+  noteSlip(prog, SKILLS[0].id, 'carry', day);
+  for (let i = 0; i < 4; i++) noteSlip(prog, SKILLS[3].id, 'carry', day);
+  assert.equal(slips(prog, { day }).top[0].skill, SKILLS[3].id);
+});
+
+test('unexplained slips are counted but never recommended', () => {
+  const prog = emptyProgress();
+  const day = '2026-10-10';
+  noteSlip(prog, SKILLS[0].id, null, day);
+  noteSlip(prog, SKILLS[0].id, null, day);
+  noteSlip(prog, SKILLS[0].id, 'carry', day);
+
+  const s = slips(prog, { day });
+  assert.equal(s.total, 3);
+  assert.equal(s.explained, 1);
+  assert.equal(s.unexplained, 2);
+  assert.deepEqual(s.top.map((x) => x.cause), ['carry'], 'unclassified is not a "cause" to report');
+});
+
+test('a child with nothing attributed yet gets no advice, not bad advice', () => {
+  const prog = emptyProgress();
+  const s = slips(prog, { day: '2026-10-10' });
+  assert.equal(s.total, 0);
+  assert.deepEqual(s.top, []);
+  assert.equal(s.next, null, 'the caller decides what to suggest instead');
+});
+
+test('only the configured window of days is reported', () => {
+  const prog = emptyProgress();
+  noteSlip(prog, SKILLS[0].id, 'carry', '2026-10-10');
+  noteSlip(prog, SKILLS[0].id, 'borrowZero', '2026-01-01');
+  const s = slips(prog, { day: '2026-10-10', days: 30 });
+  assert.deepEqual(s.top.map((x) => x.cause), ['carry']);
+  assert.equal(s.total, 1);
+});
+
+test('the report carries the slip section and it survives an empty save', () => {
+  const prog = emptyProgress();
+  const r = build({ history: [], progress: prog }, '2026-10-10', { current: 0, best: 0 });
+  assert.equal(r.slips.total, 0);
+  assert.equal(r.week.plays, 0);
+  assert.equal(r.mastery.mastered, 0);
 });
