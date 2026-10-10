@@ -102,3 +102,19 @@ test('bumping the cache version is what drops the old cache', () => {
   assert.match(sw, /caches\.keys\(\)/);
   assert.match(sw, /n !== CACHE/);
 });
+
+// The Android project builds from its own generated copy of app/, refreshed by
+// `cap copy`. A gradlew run without that step sees unchanged inputs, reports
+// success, and hands back the previous release's files - which is how a
+// released APK once shipped without three fixes that were already in app/.
+// The npm script is the documented way to build it, so it has to sync.
+test('the Android build script syncs the web files before grading', () => {
+  const pkg = JSON.parse(readFileSync(join(appDir, '..', 'mobile', 'package.json'), 'utf8'));
+  for (const name of ['apk', 'build:android']) {
+    assert.match(
+      pkg.scripts[name],
+      /cap sync/,
+      `mobile/package.json "${name}" must run cap sync first, or the build reuses the previous release's web files`,
+    );
+  }
+});

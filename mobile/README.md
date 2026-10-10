@@ -64,13 +64,35 @@ always:
 app/  ->  npx cap sync  ->  mobile/android, mobile/ios
 ```
 
-So after any change to the game:
+So after any change to the game, build the APK with **one command**:
 
 ```bash
 cd mobile
-npm run sync             # copies app/ into both platforms
-npm run open:android     # or: npm run build:android
+npm run apk              # cap sync android && gradlew assembleDebug
 ```
+
+### Do not call gradlew on its own
+
+`./gradlew assembleDebug` reads the copy of the web files that is *inside* the
+Android project, not `app/` itself. Skip the sync and Gradle sees no changed
+inputs, decides the APK is up to date, and hands you the previous release's
+files wearing a current version number. Nothing in the native build reports
+this - it looks like a successful build. It has happened once: a released APK
+was missing three fixes that were already in `app/`.
+
+Two guards exist now:
+
+- `npm run apk` always syncs first, so the correct build is also the easy one.
+- `tools/package_release.py` unzips the APK, compares every `assets/public/`
+  file against `app/` byte for byte, and **refuses to package** on any
+  difference. That check is what caught the one above.
+
+### Installing over an older build
+
+Uninstall the previous app before installing a new APK. Android will happily
+update in place, but the WebView keeps its own cached copy of the assets, and a
+leftover cache is hard to tell apart from a stale APK when you are looking at
+the screen.
 
 ## Platform-specific code
 
