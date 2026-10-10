@@ -112,7 +112,10 @@ export function recordResult(prog, id, firstTry, sig, info = {}) {
 // time, the ones left alone longest. A single first-try answer polishes it.
 // Stars are never taken away.
 export const RUST = { days: 21, max: 3 };
-const rustClock = (r) => r.lastOk || r.grantedAt || r.masteredAt || null;
+// The moment the rust threshold counts from. Exported so the growth page's
+// retention figure is measured against exactly the same instant the rust
+// marker on the skill tree uses - two definitions would eventually disagree.
+export const rustClock = (r) => r.lastOk || r.grantedAt || r.masteredAt || null;
 export function rustyOf(prog, now = Date.now()) {
   return Object.entries(prog.skills)
     .filter(([id, r]) => SKILL[id] && r.mastered && rustClock(r) && now - rustClock(r) >= RUST.days * 864e5)

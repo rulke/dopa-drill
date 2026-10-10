@@ -52,6 +52,7 @@
           <button type="button" id="open-tree" class="sub-btn"><span data-i18n="技能树">技能树</span> <b id="tree-badge"></b></button>
           <button type="button" id="open-trophy" class="sub-btn"><span data-i18n="奖杯">奖杯</span> <b id="trophy-badge"></b></button>
           <button type="button" id="open-collect" class="sub-btn"><span data-i18n="收藏">收藏</span> <b id="collect-badge"></b></button>
+          <button type="button" id="open-growth" class="sub-btn"><span data-i18n="成长">成长</span></button>
         </div>
       </div>
       <section class="quest-card" id="quests" aria-labelledby="quest-title">
@@ -85,6 +86,17 @@
     </section>
 
     <!-- Trophies (id036) -->
+    <!-- Growth: a read-only record of what has been practised and what has
+         stuck. Nothing here is a score, and nothing is hidden from the child. -->
+    <section id="screen-growth" class="screen" aria-labelledby="growth-title">
+      <header class="tree-head">
+        <button type="button" class="icon-btn" id="growth-back" data-i18n-aria="返回" aria-label="返回">‹</button>
+        <h2 id="growth-title" data-i18n="成长">成长</h2>
+        <button type="button" class="gh-print" id="growth-print" data-i18n-aria="打印" aria-label="打印" title="打印"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 7V3h8v4M6 14H4V8h12v6h-2M6 12h8v5H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+      </header>
+      <div class="gh-scroll" id="gh-scroll"><div class="gh" id="gh"></div></div>
+    </section>
+
     <section id="screen-trophy" class="screen" aria-labelledby="trophy-title">
       <header class="tree-head">
         <button type="button" class="icon-btn" id="trophy-back" data-i18n-aria="返回" aria-label="返回">‹</button>

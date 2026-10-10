@@ -419,6 +419,56 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 .mode-row .sub-btn b, .review-btn b { font-family: var(--chunky); font-weight: 400; color: var(--pink); margin-left: 4px; }
 .review-btn { background: #fff4c4; }
 
+/* ------------------------------------------------------------ growth */
+#screen-growth { flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 0 0; }
+.gh-print { width: 40px; height: 40px; display: grid; place-items: center; border: 2.5px solid var(--ink); border-radius: 50%; background: #fff; color: var(--ink); flex: none; }
+.gh-print svg { width: 20px; height: 20px; }
+.gh-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; padding: 0 14px calc(40px + env(safe-area-inset-bottom)); }
+.gh { display: flex; flex-direction: column; gap: 12px; }
+
+.gh-card { padding: 12px 14px 14px; border: 3px solid var(--ink); border-radius: 20px; background: #fff; box-shadow: 0 5px 0 var(--ink); }
+.gh-card h3 { margin: 0 0 8px; font-family: var(--chunky); font-weight: 400; font-size: 17px; }
+
+/* The headline figure of each card, when it has one. */
+.gh-lead { margin: 0 0 2px; font-family: var(--chunky); font-size: 30px; line-height: 1.1; }
+.gh-lead small { font-family: var(--round); font-weight: 900; font-size: 14px; margin-left: 4px; }
+.gh-sub { margin: 0; font-size: 13px; opacity: .75; }
+
+.gh-rows { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.gh-rows li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 14px; }
+.gh-rows .k { opacity: .75; }
+.gh-rows .v { font-weight: 900; }
+.gh-rows .v small { font-weight: 900; font-size: 11px; opacity: .7; margin-left: 2px; }
+
+/* One bar per day of the current week. */
+.gh-bars { display: flex; align-items: flex-end; gap: 6px; height: 68px; margin: 2px 0 4px; }
+.gh-bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
+.gh-bar i { width: 100%; min-height: 3px; border: 2px solid var(--ink); border-radius: 6px; background: var(--blue-soft); }
+.gh-bar.got i { background: var(--blue); }
+.gh-bar.today i { background: var(--yellow); }
+.gh-bar b { font-size: 10px; font-weight: 900; opacity: .6; }
+.gh-bar.today b { opacity: 1; }
+
+.gh-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.gh-chips li { padding: 3px 10px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); font-size: 12px; font-weight: 900; }
+.gh-empty { margin: 0; font-size: 13px; opacity: .6; }
+/* A soft bar for the retention figure: it is a proportion, so it should read
+   as one at a glance. */
+.gh-meter { height: 12px; margin: 6px 0 8px; border: 2.5px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
+.gh-meter i { display: block; height: 100%; background: var(--mint); }
+
+/* On paper the cards should not each carry a drop shadow, and the screen
+   chrome has no meaning. */
+@media print {
+  body { background: #fff; }
+  #app { width: 100%; height: auto; max-height: none; }
+  #bg, #fx, #fx-back, #rays-fallback, #actors, #cutins, #flash, #toast, .tree-head .icon-btn, .gh-print { display: none !important; }
+  #screen-growth .tree-head { padding: 0 0 8px; }
+  .gh-scroll { overflow: visible; padding: 0; }
+  .gh-card { break-inside: avoid; box-shadow: none; border-width: 2px; }
+  .screen { position: static; }
+}
+
 /* ------------------------------------------------------------ skill tree */
 #screen-tree { flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 0 0; }
 .tree-head { display: flex; align-items: center; gap: 10px; padding: 0 14px 6px; }

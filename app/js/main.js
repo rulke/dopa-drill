@@ -19,6 +19,7 @@ import * as tr from './trophies.js';
 import { trophyName, trophyDesc, seriesTitle } from './trophies.js';
 import * as ul from './unlocks.js';
 import * as slips from './slips.js';
+import * as report from './report.js';
 import { BASIC_SCORE, extraPoints, basicDopaL, extraProblemGain, addDopa, comboMult, comboMaxed, comboWindowMs, comboMilestone, fmtDopa, unitOf, unitLabel } from './scoring.js';
 
 const $ = (s) => document.querySelector(s);
@@ -141,9 +142,25 @@ function layoutActors() {
     crowd.forEach((c, i) => placeCrowd(c, i));
     return;
   }
+  if (S.screen === 'growth') {
+    // Like the trophy screen: out of the way, beside the header.
+    const h = $('#screen-growth .tree-head').getBoundingClientRect();
+    const c = $('#growth-print').getBoundingClientRect();
+    hero.S = 0.3; hero.place(c.left - 34, h.bottom - 16); hero.lift = 0; hero.rot = 0;
+    crowd.forEach((m, i) => placeCrowd(m, i));
+    return;
+  }
   if (S.screen === 'title') r = $('#title-stage').getBoundingClientRect();
   else if (S.screen === 'play') r = stage.getBoundingClientRect();
-  else r = $(`#screen-${S.screen} .result-card`).getBoundingClientRect();
+  else {
+    // A screen with no card to stand on: leave the hero where he is rather than
+    // throwing. This runs from a bare requestAnimationFrame, outside the frame
+    // loop's error net, so a null here shows up only as a mascot parked in the
+    // middle of the page.
+    const card = $(`#screen-${S.screen} .result-card`);
+    if (!card) return;
+    r = card.getBoundingClientRect();
+  }
   const onCard = S.screen === 'result' || S.screen === 'final';
   const scale = S.screen === 'title' ? clamp(r.height / 190, 0.7, 1.1) : onCard ? 0.6 : clamp(r.height / 175, 0.5, 0.74);
   hero.S = scale;
@@ -2237,6 +2254,89 @@ function renderTrophyList() {
   $('#tr-list').innerHTML = html || `<p class="tr-empty">${t('还没有哦')}</p>`;
   $('#trophy-count').textContent = `${tr.earnedCount(ts)} / ${tr.TROPHIES.length}`;
 }
+// ---------------------------------------------------------------- growth
+// A read-only record, written so a parent can read it and so the child can
+// show it. Facts and the next step only: no grades, no ranking, no comparison
+// with anyone else, and nothing hidden from the child.
+const fmtMinutes = (n) => fmtNum(n);
+
+function growthHtml(r) {
+  const m = r.mastery;
+  const ret = r.retention;
+  const pct = (x) => `${Math.round(x * 100)}%`;
+
+  // ① the week, as a bar per day
+  const peak = Math.max(1, ...r.week.bars.map((b) => b.minutes));
+  const bars = r.week.bars.map((b, i) => {
+    const got = b.minutes > 0;
+    const today = b.day === r.today;
+    const h = got ? Math.max(6, Math.round((b.minutes / peak) * 100)) : 0;
+    return `<div class="gh-bar${got ? ' got' : ''}${today ? ' today' : ''}"><i style="height:${h}%"></i><b>${t(report.barLabelKey(i))}</b></div>`;
+  }).join('');
+  const weekCard = r.week.plays
+    ? `<h3>${t('这周练了多少')}</h3>
+       <p class="gh-lead">${fmtMinutes(r.week.minutes)}<small>${t('分钟')}</small></p>
+       <p class="gh-sub">${t('练了{n}次', { n: r.week.plays })}</p>
+       <div class="gh-bars">${bars}</div>`
+    : `<h3>${t('这周练了多少')}</h3><p class="gh-empty">${t('这周还没有练习')}</p><div class="gh-bars">${bars}</div>`;
+
+  // ② what they can do
+  const masteryCard = m.mastered
+    ? `<h3>${t('会了什么')}</h3>
+       <p class="gh-lead">${m.mastered}<small>/${m.total}</small></p>
+       <ul class="gh-rows">
+         <li><span class="k">${t('掌握的技能')}</span><span class="v">${m.gained ? t('本周新掌握 {n} 个', { n: m.gained }) : t('本周没有新增')}</span></li>
+         <li><span class="k">${t('星星')}</span><span class="v">${m.stars}<small>/${m.starMax}</small></span></li>
+       </ul>`
+    : `<h3>${t('会了什么')}</h3><p class="gh-empty">${t('还没有掌握技能')}</p>`;
+
+  // ③ does it still work - the one figure that separates "practised" from "remembered"
+  const rustyChips = ret.rusty.slice(0, 6).map((x) => `<li>${skillName(x.skill)}</li>`).join('');
+  const retainCard = `<h3>${t('还记得吗')}</h3>`
+    + (ret.rate == null
+      ? `<p class="gh-empty">${t('还没有掌握技能')}</p>`
+      : `<p class="gh-lead">${pct(ret.rate)}</p>
+         <div class="gh-meter"><i style="width:${Math.round(ret.rate * 100)}%"></i></div>
+         <ul class="gh-rows">
+           <li><span class="k">${t('{n}天内答对过', { n: ret.days })}</span><span class="v">${ret.held}<small>/${ret.mastered}</small></span></li>
+           <li><span class="k">${t('上次练习')}</span><span class="v">${r.last.day == null ? t('还没有记录') : r.last.daysAgo === 0 ? t('今天') : r.last.daysAgo === 1 ? t('昨天') : t('{n}天前', { n: r.last.daysAgo })}</span></li>
+         </ul>
+         ${rustyChips ? `<p class="gh-sub" style="margin-top:8px">${t('有点生锈的')}</p><ul class="gh-chips">${rustyChips}</ul>` : ''}`);
+
+  // ⑤ showing up
+  const streakCard = `<h3>${t('坚持')}</h3>
+    <ul class="gh-rows">
+      <li><span class="k">${t('连续天数')}</span><span class="v">${r.streak.current}<small>${t('天')}</small></span></li>
+      <li><span class="k">${t('最长记录')}</span><span class="v">${r.streak.best}<small>${t('天')}</small></span></li>
+    </ul>`;
+
+  return `<div class="gh-card">${weekCard}</div>
+    <div class="gh-card">${masteryCard}</div>
+    <div class="gh-card">${retainCard}</div>
+    <div class="gh-card">${streakCard}</div>`;
+}
+
+// Named ...Page to stay clear of renderGrowth(el), which draws the growth
+// block on the result screen.
+function renderGrowthPage() {
+  const st = store.load();
+  const today = store.dayKey();
+  const r = report.build(
+    { history: st.history, progress: progress() },
+    today,
+    { current: store.streak(), best: store.bestStreak() },
+  );
+  $('#gh').innerHTML = growthHtml(r);
+}
+
+function openGrowth() {
+  audio.unlock();
+  audio.play('blip', audio.now(), { m: 79, v: 0.1 });
+  renderGrowthPage();
+  showScreen('growth');
+  $('#gh-scroll').scrollTop = 0;
+}
+
 function openTrophyList() {
   audio.unlock();
   audio.play('blip', audio.now(), { m: 79, v: 0.1 });
@@ -2599,6 +2699,9 @@ $('#collect-back').addEventListener('click', () => { audio.play('blip', audio.no
 $('#co-tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; co.cat = b.dataset.cat; audio.play('blip', audio.now(), { m: 80, v: 0.08 }); clearPreviewCrowd(); renderCollection(); $('#co-scroll').scrollTop = 0; });
 $('#co-grid').addEventListener('click', (e) => { const b = e.target.closest('.co-item'); if (b) pickItem(b.dataset.id); });
 $('#trophy-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
+$('#open-growth').addEventListener('click', openGrowth);
+$('#growth-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
+$('#growth-print').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.1 }); print(); });
 $$('.tr-filter button').forEach((b) => b.addEventListener('click', () => { trFilter.f = b.dataset.f; $$('.tr-filter button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); audio.play('blip', audio.now(), { m: 80, v: 0.08 }); renderTrophyList(); }));
 $('#tr-list').addEventListener('toggle', (e) => { if (e.target.open) audio.play('blip', audio.now(), { m: 84, v: 0.07 }); }, true);
 $('#hammer-no').addEventListener('click', () => closeHammer(false));
