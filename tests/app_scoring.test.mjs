@@ -108,6 +108,26 @@ const runOf = (problems, combo = 1) => {
   return L;
 };
 
+// The same accumulation one answer cell at a time, so the combo can climb the
+// way it does in play. `cells` is how many digits a problem asks for. This is
+// the end of the curve a player actually meets: a no-miss run maxes the combo at
+// 20 cells and keeps it there, which roughly triples how fast the units arrive.
+const playOf = (problems, cells) => {
+  let L = 0; let combo = 0;
+  for (let k = 0; k < problems; k++) {
+    for (let j = 0; j < cells; j++) {
+      combo += 1;
+      L = addDopa(L, endlessProblemGain(k) / cells, combo, ENDLESS_DOPA_MAX_L);
+    }
+  }
+  return L;
+};
+const crossesAt = (target, cells) => {
+  let n = 1;
+  while (n < 3000 && (cells ? playOf(n, cells) : runOf(n)) < target) n += 1;
+  return n;
+};
+
 test('the endless total starts at nothing and never flattens', () => {
   assert.equal(endlessTotalL(0), 0, 'a run starts from zero like every other mode');
   let prev = 0;
@@ -124,12 +144,27 @@ test('the endless total starts at nothing and never flattens', () => {
 });
 
 test('a good endless run reaches 兆', () => {
-  // The design's target: 60-80 problems, so a run that is going well passes 兆
-  // before it runs out of lives and a merely long one does not get there early.
+  // The design's target, at its slowest reading: with no combo at all, 60
+  // problems is not there yet and 80 is.
   assert.ok(10 ** runOf(60) < 1e12, `60 problems must not be there yet: 10^${runOf(60).toFixed(2)}`);
   assert.ok(runOf(80) >= 12, `80 problems must be: 10^${runOf(80).toFixed(2)}`);
   // Each unit on the way is a milestone the pad can actually print.
   assert.equal(unitOf(runOf(80)), '兆', 'and the figure reads in 兆');
+});
+
+test('the unit rhythm holds at both ends of the combo', () => {
+  // A real no-miss run of 60 problems, measured in the browser, crossed 万 at
+  // problem 4, 亿 at 11, 兆 at 22 and 京 at 41 - the combo end of this table. The
+  // no-combo column is the same curve with the multiplier pinned at 1. Both are
+  // asserted, because a retune that helps one silently breaks the other.
+  const withCombo = [4, 10, 20, 38, 70].map((n, i) => unitOf(playOf(n, 2)));
+  assert.deepEqual(withCombo, ['万', '亿', '兆', '京', '垓']);
+  const noCombo = [5, 21, 74, 254].map((n) => unitOf(runOf(n)));
+  assert.deepEqual(noCombo, ['万', '亿', '兆', '京']);
+  // The unit table is not decoration: a good run should exhaust the four units a
+  // child can name and still have room above.
+  assert.ok(crossesAt(12, 2) < 40, 'the combo case must not take a whole session to reach 兆');
+  assert.ok(crossesAt(12, 0) < 90, 'and the no-combo case must still get there inside a long run');
 });
 
 test('the units keep coming after 兆', () => {
