@@ -10,7 +10,7 @@ import os, sys, zipfile, hashlib, shutil
 # that step silently ships the previous release's files inside a current APK.
 # That happened once; the check below is what stops it happening again.
 VERSION = sys.argv[1] if len(sys.argv) > 1 else 'v0.0.0'
-STAMP = (2026, 10, 10, 0, 0, 0)
+STAMP = (2026, 10, 11, 0, 0, 0)
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 app = os.path.join(root, 'app')
