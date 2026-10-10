@@ -11,7 +11,9 @@
     "open:android": "cap open android",
     "open:ios": "cap open ios",
     "apk": "cap sync android && cd android && ./gradlew assembleDebug",
+    "apk:win": "cap sync android && cd android && gradlew.bat assembleDebug",
     "build:android": "cap sync android && cd android && ./gradlew assembleRelease",
+    "build:android:win": "cap sync android && cd android && gradlew.bat assembleRelease",
     "run:android": "cap run android",
     "run:ios": "cap run ios"
   },

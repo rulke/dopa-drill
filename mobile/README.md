@@ -68,8 +68,14 @@ So after any change to the game, build the APK with **one command**:
 
 ```bash
 cd mobile
-npm run apk              # cap sync android && gradlew assembleDebug
+npm run apk              # cap sync android && ./gradlew assembleDebug
 ```
+
+On Windows use `npm run apk:win`. npm runs scripts through `cmd.exe` there,
+which cannot execute `./gradlew` (a shell script) - it needs `gradlew.bat`, and
+`npm run apk` fails with `'.' is not recognized as an internal or external
+command`. Use the `:win` variant rather than calling `gradlew.bat` yourself: the
+sync matters more than the shell does.
 
 ### Do not call gradlew on its own
 
