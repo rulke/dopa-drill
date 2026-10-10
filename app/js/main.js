@@ -146,8 +146,10 @@ function layoutActors() {
   if (S.screen === 'growth') {
     // Like the trophy screen: out of the way, beside the header.
     const h = $('#screen-growth .tree-head').getBoundingClientRect();
-    const c = $('#growth-print').getBoundingClientRect();
-    hero.S = 0.3; hero.place(c.left - 34, h.bottom - 16); hero.lift = 0; hero.rot = 0;
+    // Anchored to the header itself: it used to hang off the print button, which
+    // is gone, and a missing anchor here throws from a bare rAF where nothing
+    // reports it.
+    hero.S = 0.3; hero.place(h.right - 34, h.bottom - 16); hero.lift = 0; hero.rot = 0;
     crowd.forEach((m, i) => placeCrowd(m, i));
     return;
   }
@@ -2292,7 +2294,9 @@ function openTrophies() {
   $('#tg-sub').innerHTML = batch.length ? t('凭之前的记录获得<b>{n}</b>个！', { n: batch.length }) : list.length > 1 ? t('获得<b>{n}</b>个！', { n: list.length }) : '';
   const MAX = 6;
   const rewards = list.map((x) => x.reward && ul.ITEM[x.reward]).filter(Boolean);
-  $('#tg-list').innerHTML = list.slice(0, MAX).map((x) => `<li class="r-${x.rank}"><i>${trophySvg(x.rank)}</i><span><b>${trophyName(x)}</b><small>${trophyDesc(x)}</small></span></li>`).join('') + (list.length > MAX ? `<li class="more">${t('其余{n}个', { n: list.length - MAX })}</li>` : '')
+  // The overflow row is the way to the rest of them: before, it only said how
+  // many were missing and there was nowhere to go and look.
+  $('#tg-list').innerHTML = list.slice(0, MAX).map((x) => `<li class="r-${x.rank}"><i>${trophySvg(x.rank)}</i><span><b>${trophyName(x)}</b><small>${trophyDesc(x)}</small></span></li>`).join('') + (list.length > MAX ? `<li class="more"><button type="button" id="tg-more">${t('其余{n}个', { n: list.length - MAX })}<i aria-hidden="true">›</i></button></li>` : '')
     + rewards.map((it) => `<li class="reward"><i>${itemThumb(it)}</i><span><b>${t('获得了{cat}「{name}」！', { cat: catName(it.cat), name: t(it.name) })}</b><small>${t('可以在收藏里选用')}</small></span></li>`).join('');
   $('#trophy-got').hidden = false;
   audio.unlock();
@@ -2838,7 +2842,7 @@ $('#cal-prev').addEventListener('click', () => moveMonth(-1));
 $('#cal-next').addEventListener('click', () => moveMonth(1));
 $('#cal-grid').addEventListener('click', (e) => { const b = e.target.closest('[data-day]'); if (b) openDay(b.dataset.day); });
 $('#close-day').addEventListener('click', () => { $('#day-log').hidden = true; });
-$('#day-log').addEventListener('click', (e) => { if (e.target.id === 'day-log') $('#day-log').hidden = true; });
+$('#day-log').addEventListener('click', (e) => { if (isTap(e) && e.target.id === 'day-log') $('#day-log').hidden = true; });
 $('#screen-title').addEventListener('scroll', () => requestAnimationFrame(layoutActors), { passive: true });
 $$('#screen-result, #screen-final, #tree-scroll, #tr-scroll').forEach((el) => el.addEventListener('scroll', () => requestAnimationFrame(layoutActors), { passive: true }));
 $('#open-settings').addEventListener('click', openSettings);
@@ -2848,11 +2852,31 @@ $('#reset-data').addEventListener('click', askReset);
 $('#demo-play').addEventListener('click', startDemo);
 $('#bonus-ok').addEventListener('click', closeBonus);
 $('#hammer-yes').addEventListener('click', () => closeHammer(true));
+// Closing a dialog by tapping its backdrop must not also fire for a drag that
+// happens to end there. On a phone, dragging is how you try to scroll a long
+// dialog, and it used to dismiss it instead. Comparing where the press started
+// with where the click lands tells the two apart; clicks from the keyboard come
+// with no coordinates at all and are never treated as drags.
+let pressedAt = null;
+const DRAG_SLOP = 10;
+addEventListener('pointerdown', (e) => { pressedAt = { x: e.clientX, y: e.clientY }; }, true);
+const isTap = (e) => e.detail === 0 || !pressedAt
+  || Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y) <= DRAG_SLOP;
+
 $('#tg-ok').addEventListener('click', closeTrophies);
+// Rebuilt on every open, so the row is caught on the list rather than bound.
+$('#tg-list').addEventListener('click', (e) => {
+  if (!e.target.closest('#tg-more')) return;
+  // Seeing the rest means leaving the announcement, so the rest of the queue
+  // goes too - closing alone would only show the next six.
+  S.trophyQueue.length = 0;
+  closeTrophies();
+  openTrophyList();
+});
 $('#si-close').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); closeSkillInfo(); });
 $('#si-go').addEventListener('click', () => { const id = S.skillInfo; closeSkillInfo(); audio.play('blip', audio.now(), { m: 84, v: 0.12 }); startGame('practice', id); });
-$('#skill-info').addEventListener('click', (e) => { if (e.target.id === 'skill-info') closeSkillInfo(); });
-$('#trophy-got').addEventListener('click', (e) => { if (e.target.id === 'trophy-got') closeTrophies(); });
+$('#skill-info').addEventListener('click', (e) => { if (isTap(e) && e.target.id === 'skill-info') closeSkillInfo(); });
+$('#trophy-got').addEventListener('click', (e) => { if (isTap(e) && e.target.id === 'trophy-got') closeTrophies(); });
 $('#open-trophy').addEventListener('click', openTrophyList);
 $('#open-collect').addEventListener('click', openCollection);
 $('#collect-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
@@ -2870,11 +2894,10 @@ $('#gh').addEventListener('click', (e) => {
   if (b) practiceFromGrowth(b.dataset.skill);
 });
 $('#growth-back').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); toTitle(); });
-$('#growth-print').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 76, v: 0.1 }); print(); });
 $$('.tr-filter button').forEach((b) => b.addEventListener('click', () => { trFilter.f = b.dataset.f; $$('.tr-filter button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); audio.play('blip', audio.now(), { m: 80, v: 0.08 }); renderTrophyList(); }));
 $('#tr-list').addEventListener('toggle', (e) => { if (e.target.open) audio.play('blip', audio.now(), { m: 84, v: 0.07 }); }, true);
 $('#hammer-no').addEventListener('click', () => closeHammer(false));
-$('#settings').addEventListener('click', (e) => { if (e.target.id === 'settings') closeSettings(); });
+$('#settings').addEventListener('click', (e) => { if (isTap(e) && e.target.id === 'settings') closeSettings(); });
 $('[data-toggle="sound"]').addEventListener('click', () => { audio.unlock(); setMuted(!S.muted); if (!S.muted) audio.play('blip', audio.now(), { m: 84, v: 0.12 }); });
 $('#volume').addEventListener('input', (e) => { audio.unlock(); const v = e.target.value / 100; setVolume(v); audio.play('blip', audio.now(), { m: 64 + Math.round(v * 20), v: 0.12 }); });
 $('#motion').addEventListener('input', (e) => { const v = e.target.value / 100; setMotion(v); motionSliderFx(v); });
@@ -2905,7 +2928,7 @@ addEventListener('pointerup', cancelHold);
 addEventListener('pointercancel', cancelHold);
 $('#confirm-no').addEventListener('click', () => { audio.play('blip', audio.now(), { m: 72, v: 0.08 }); closeConfirm(); });
 $('#confirm-yes').addEventListener('click', confirmYes);
-$('#confirm').addEventListener('click', (e) => { if (e.target.id === 'confirm') closeConfirm(); });
+$('#confirm').addEventListener('click', (e) => { if (isTap(e) && e.target.id === 'confirm') closeConfirm(); });
 $('#tree').addEventListener('click', (e) => {
   const b = e.target.closest('.node');
   if (!b) return;

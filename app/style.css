@@ -421,8 +421,6 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 
 /* ------------------------------------------------------------ growth */
 #screen-growth { flex-direction: column; padding: calc(10px + env(safe-area-inset-top)) 0 0; }
-.gh-print { width: 40px; height: 40px; display: grid; place-items: center; border: 2.5px solid var(--ink); border-radius: 50%; background: #fff; color: var(--ink); flex: none; }
-.gh-print svg { width: 20px; height: 20px; }
 .gh-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; padding: 0 14px calc(40px + env(safe-area-inset-bottom)); }
 .gh { display: flex; flex-direction: column; gap: 12px; }
 
@@ -457,13 +455,19 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 .gh-meter { height: 12px; margin: 6px 0 8px; border: 2.5px solid var(--ink); border-radius: 999px; background: #fff; overflow: hidden; }
 .gh-meter i { display: block; height: 100%; background: var(--mint); }
 
+/* The overflow row leads somewhere, so it looks and behaves like a control. */
+.tg-list li.more button { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 0; border: 0; background: none; font: inherit; font-weight: 900; color: var(--blue); cursor: pointer; }
+.tg-list li.more button i { font-style: normal; font-size: 17px; line-height: 1; }
+
 /* ------------------------------------------------------------ endless */
 /* Lives sit where the progress dots do, so the HUD keeps its height. */
 .life { font-size: 19px; line-height: 1; color: var(--red); text-shadow: 0 2px 0 #fff; }
 .life.gone { color: #cfd2e6; text-shadow: none; }
 .hud .life + .life { margin-left: 3px; }
 /* Two lines, like the level button: the mode and what it costs to play. */
-.endless-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; height: 52px; background: #ffefd6; }
+/* min-height: the English rules line is a pixel taller than the 52px the
+   other sub-buttons use. */
+.endless-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-height: 52px; background: #ffefd6; }
 .endless-btn small { font-size: 11px; letter-spacing: 0; opacity: .85; }
 #screen-endless { flex-direction: column; justify-content: center; }
 
@@ -475,7 +479,7 @@ body.reduced .logo span, body.reduced .spot, body.reduced .marquee, body.reduced
 @media print {
   body { background: #fff; }
   #app { width: 100%; height: auto; max-height: none; }
-  #bg, #fx, #fx-back, #rays-fallback, #actors, #cutins, #flash, #toast, .tree-head .icon-btn, .gh-print { display: none !important; }
+  #bg, #fx, #fx-back, #rays-fallback, #actors, #cutins, #flash, #toast, .tree-head .icon-btn { display: none !important; }
   #screen-growth .tree-head { padding: 0 0 8px; }
   .gh-scroll { overflow: visible; padding: 0; }
   .gh-card { break-inside: avoid; box-shadow: none; border-width: 2px; }
@@ -739,7 +743,9 @@ li.done .qbar { background: var(--mint); }
 .cr-new i, .gb-new small { font-family: var(--round); line-height: 1.3; margin-bottom: 1px; }
 .cr-new, .gb-new em { line-height: 1; }
 /* id050: review sits right under じぶんレベル. */
-.modes > .review-main { min-width: 240px; font-weight: 900; }
+/* One width for the mode buttons in the stack, so the rows line up. The
+   buttons inside .mode-row are grandchildren and are not affected. */
+.modes > .sub-btn { min-width: 240px; font-weight: 900; }
 .modes > .review-main[hidden] { display: none; }
 
 /* ------------------------------------------------------------ rust (id040) */
