@@ -559,7 +559,9 @@ function press(key, btn = padButtons[key]) {
     S.stepMisses = (S.stepMisses || 0) + 1;
     S.qMisses = (S.qMisses || 0) + 1;
     if (S.mode === 'endless') {
-      S.endless.misses += 1;
+      // noteMiss owns this counter. Incrementing it here as well made one wrong
+      // digit read as two in the tally, and wrote the doubled figure into the
+      // run's history record.
       const out = endless.noteMiss(S.endless);
       renderLives();
       if (out) { endEndless(); return; }
@@ -790,8 +792,12 @@ async function clearProblem() {
   if (endlessRun) {
     gained = extraPoints(S.endless.solved);
     const back = endless.noteSolved(S.endless, !S.wrongInQ);
+    // Redraw now, not at the next problem: the wave rises on this line, and
+    // renderLives() is the only thing that puts it on screen, so the HUD used to
+    // sit a problem behind the count for the whole celebration.
+    renderLives();
     // A life coming back is worth saying out loud, and worth a life-shaped ring.
-    if (back) { renderLives(); audio.unit(0.5); const r = card.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + 20, { count: 18, kinds: ['heart'], speed: 340, up: 120 }); }
+    if (back) { audio.unit(0.5); const r = card.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + 20, { count: 18, kinds: ['heart'], speed: 340, up: 120 }); }
   } else if (extra) { gained = extraPoints(S.extra.solved); S.extra.solved += 1; S.extra.score += gained; } else { S.solved += 1; if (!S.wrongInQ) S.firstTry += 1; }
   updateTally();
   if (!extra && !endlessRun) {
@@ -1384,7 +1390,11 @@ function showEndlessResult() {
     if (!best || e.wave > best.wave) store.load().endlessBest = { wave: e.wave, at: Date.now() };
     store.save();
   }
-  $('#e-wave').innerHTML = `${e.wave}<small>${t('波')}</small>`;
+  // The number only: the unit is the sibling span in index.html, which carries
+  // data-i18n so a language switch keeps working. Writing the unit here too
+  // printed it twice ("3波波"), and because the copy went inside the <b> it took
+  // the 92px display size instead of the 28px the span is styled to.
+  $('#e-wave').textContent = String(e.wave);
   $('#e-ok').innerHTML = `${e.solved}<small>${t('题')}</small>`;
   $('#e-score').textContent = fmtNum(e.score);
   $('#e-dopa').textContent = fmtDopa(S.dopa.L);

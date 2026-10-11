@@ -78,9 +78,16 @@ export function noteSolved(run, firstTry) {
 }
 
 // One wrong digit. Returns true when that was the last life.
+//
+// Losing a life restarts the ten-problem clock, so a life comes back ten solved
+// problems after the LAST mistake rather than at the run's tenth, twentieth and
+// so on. Without the reset a loss on problem 7 was refunded on problem 10 - three
+// problems later - and a player who errs once in a while never sees the hearts
+// drop at all.
 export function noteMiss(run) {
   run.misses += 1;
   run.lives = Math.max(0, run.lives - 1);
+  run.sinceLife = 0;
   if (!run.lives) run.over = true;
   return run.over;
 }

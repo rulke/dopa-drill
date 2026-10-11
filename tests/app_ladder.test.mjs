@@ -137,3 +137,28 @@ test('every arrangement answers the new rungs', () => {
     assert.match(classic, new RegExp(`L >= ${n}\\b`), `the default arrangement adds nothing at rung ${n}`);
   }
 });
+
+// ------------------------------------------------- endless run's own counters
+// Both of these were counted or printed twice in the endless mode and neither
+// showed up as an error: one wrong digit read as two in the tally, and the wave
+// on the result page said "3波波". They are wiring faults between main.js and the
+// module or the markup it shares the job with, so that is where they are checked.
+test('one wrong digit is one miss', () => {
+  assert.ok(!/S\.endless\.misses \+= 1/.test(main),
+    'main.js must not count the miss itself: noteMiss() already does, and the doubling also reached the saved history');
+  assert.match(main, /const out = endless\.noteMiss\(S\.endless\)/, 'the decrement must still go through noteMiss');
+});
+
+test('the result page prints each unit once', () => {
+  // #e-wave's unit is the sibling span in index.html, which carries data-i18n so
+  // a language switch still translates it. Writing it from main.js as well
+  // printed it twice, and the copy landed inside the <b> and took its 92px size.
+  const markup = html.match(/<b id="e-wave">[^<]*<\/b>\s*<span[^>]*data-i18n="波"/);
+  assert.ok(markup, 'the wave field must keep its own translated unit next to it');
+  assert.ok(!/\$\('#e-wave'\)\.innerHTML/.test(main), 'main.js must not rewrite the wave field');
+  assert.match(main, /\$\('#e-wave'\)\.textContent = String\(e\.wave\)/, 'and must write the number only');
+  // #e-ok, the field beside it, has no such span, so main.js owns that unit - and
+  // it must keep owning it, or the count would lose its 题 entirely.
+  assert.ok(!/<dd id="e-ok">[^<]*<\/dd>\s*题/.test(html), 'the 答对 field must not gain a second unit');
+  assert.match(main, /\$\('#e-ok'\)\.innerHTML = `\$\{e\.solved\}<small>\$\{t\('题'\)\}<\/small>`/);
+});

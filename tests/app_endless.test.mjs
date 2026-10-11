@@ -78,6 +78,30 @@ test('a life comes back every ten solved problems, never above three', () => {
   assert.equal(noteSolved(r, false), false, 'and not another straight after');
 });
 
+test('a life lost late is not refunded early', () => {
+  // The clock restarts on a loss, so a loss during problem k comes back during
+  // problem k+9: the problem being answered counts as the first of the ten.
+  // Without the reset the counter ran from the start of the run, and a loss on
+  // problem 7 was refunded on problem 10 - three problems later - so the hearts
+  // looked like they never dropped. Found by playing, not by a test.
+  const regains = (losses, upto) => {
+    const r = newRun();
+    const when = [];
+    for (let solved = 1; solved <= upto; solved++) {
+      if (losses.includes(solved)) noteMiss(r);
+      if (noteSolved(r, true)) when.push(solved);
+    }
+    return { when, run: r };
+  };
+
+  assert.deepEqual(regains([1], 14).when, [10], 'a loss during the first problem');
+  assert.deepEqual(regains([7], 24).when, [16], 'and during the seventh');
+  assert.deepEqual(regains([5, 22], 40).when, [14, 31], 'each loss moves its own refund');
+  const late = regains([7], 24).run;
+  assert.equal(late.lives, LIVES, 'back to full');
+  assert.equal(late.misses, 1, 'and the miss is counted once');
+});
+
 test('the score follows the same ramp as the extra stage', () => {
   const r = newRun();
   for (let i = 0; i < 5; i++) noteSolved(r, true);
