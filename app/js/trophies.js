@@ -48,7 +48,9 @@ const SERIES_DEFS = [
   { key: 'combo', cat: '连击', title: '连击', metric: 'maxCombo', steps: [5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200, 300], name: (v) => t('{n}连击', { n: v }), desc: (v) => t('达成{n}连击', { n: v }) },
   { key: 'perfects', cat: '准确', title: '零失误完成', metric: 'perfects', steps: [1, 3, 5, 10, 20, 30, 50, 100, 200, 300], name: (v) => t('零失误{n}次', { n: v }), desc: (v) => t('以100%一次答对率完整练习{n}次', { n: v }) },
   { key: 'firstTry', cat: '准确', title: '一次答对', metric: 'firstTry', steps: [10, 50, 100, 300, 500, 1000, 3000, 5000, 10000, 30000], name: (v) => t('一次答对{n}题', { n: fmt(v) }), desc: (v) => t('累计{n}题一次答对', { n: fmt(v) }) },
-  { key: 'dopa', cat: '多巴', title: '多巴', metric: 'bestDopaL', steps: [2, 3, 4, 5, 6, 7, 8, 9], name: (v) => t('{l}多巴', { l: fmtDopa(v) }), desc: (v) => t('单次练习多巴超过{l}', { l: fmtDopa(v) }) },
+  // Steps past 9 (10億) are only reachable in the endless run: its curve does not
+  // converge, so 兆 and 京 are what the long run is for.
+  { key: 'dopa', cat: '多巴', title: '多巴', metric: 'bestDopaL', steps: [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16], name: (v) => t('{l}多巴', { l: fmtDopa(v) }), desc: (v) => t('单次练习多巴超过{l}', { l: fmtDopa(v) }) },
   { key: 'review', cat: '复习', title: '复习', metric: 'reviewSolved', steps: [1, 5, 10, 30, 50, 100, 200, 300], name: (v) => t('复习{n}题', { n: v }), desc: (v) => t('重做{n}道错题', { n: v }) },
   ...[1, 2, 3, 4, 5, 6].map((g) => ({ key: `grade${g}`, cat: '年级', title: () => t('用{g}年级练习', { g }), metric: `gradePlays${g}`, steps: [1, 10, 30], name: (v) => t('{g}年级练习{n}次', { g, n: v }), desc: (v) => t('用「{g}年级」练习{n}次', { g, n: v }) })),
   { key: 'secret', cat: '秘密', title: '秘密', items: [
@@ -93,11 +95,17 @@ export const seriesTitle = (s) => (typeof s.title === 'function' ? s.title() : t
   { key: 'gradeStar3', cat: '技能', title: '按年级全部☆3', items: [1, 2, 3, 4, 5, 6].map((g) => ({ id: `gradeStar3-${g}`, metric: `gradeStar3${g}`, need: 1, arg: g, name: (v) => t('{g}年级全部☆3', { g: v }), desc: (v) => t('把{g}年级的全部技能练到☆3以上', { g: v }) })) },
   { key: 'endlessBest', cat: '无尽', title: '最高波次', metric: 'endlessBest', steps: [3, 5, 10, 15, 20, 30], name: (v) => t('最高{n}波', { n: v }), desc: (v) => t('无尽模式打到第{n}波', { n: v }) },
   { key: 'endlessSolved', cat: '无尽', title: '无尽解题', metric: 'endlessSolved', steps: [10, 30, 50, 100, 300, 1000], name: (v) => t('无尽答对{n}题', { n: v }), desc: (v) => t('在无尽模式里累计答对{n}题', { n: v }) },
+  // The endless mode's other two axes. Wave and total only reward going further or
+  // playing more; these catch showing up, surviving long in one run, and never
+  // erring - so a child who never beats their record still has something to earn.
+  { key: 'endlessRuns', cat: '无尽', title: '无尽局数', metric: 'endlessRuns', steps: [1, 3, 10, 30, 100, 300], name: (v) => t('无尽{n}局', { n: v }), desc: (v) => t('玩{n}局无尽挑战', { n: v }) },
+  { key: 'endlessRunBest', cat: '无尽', title: '单局答对', metric: 'endlessRunBest', steps: [10, 20, 30, 50, 80, 120], name: (v) => t('单局答对{n}题', { n: v }), desc: (v) => t('无尽模式一局里答对{n}题', { n: v }) },
+  { key: 'endlessClean', cat: '无尽', title: '零失误到第几波', metric: 'endlessCleanWave', steps: [2, 3, 5, 8, 12], name: (v) => t('零失误到第{n}波', { n: v }), desc: (v) => t('一次都没错地打到第{n}波', { n: v }) },
   { key: 'polished', cat: '成长', title: '擦亮生锈', metric: 'polished', steps: [1, 3, 5, 10, 30, 50], name: (v) => t('擦亮{n}次', { n: v }), desc: (v) => t('擦亮{n}次生锈技能', { n: v }) },
   { key: 'capsules', cat: '成长', title: '时间胶囊', metric: 'capsules', steps: [1, 3, 5, 10, 30], name: (v) => t('打开{n}个', { n: v }), desc: (v) => t('打开{n}个时间胶囊', { n: v }) },
   { key: 'capsuleFaster', cat: '成长', title: '比那天更快', metric: 'capsuleFaster', steps: [1, 5, 10], name: (v) => t('比那天快{n}次', { n: v }), desc: (v) => t('在时间胶囊中比那天更快解出（{n}次）', { n: v }) },
   { key: 'grew', cat: '成长', title: '进步啦！', metric: 'grew', steps: [1, 5, 10, 30, 50, 100], name: (v) => t('进步{n}次', { n: v }), desc: (v) => t('结算页出现{n}次「进步啦！」', { n: v }) },
-  { key: 'items', cat: '收藏', title: '收藏', metric: 'itemsOwned', steps: [10, 20, 30, 40, 47], name: (v) => t('收藏{n}项', { n: v }), desc: (v) => t('收集{n}项收藏', { n: v }) },
+  { key: 'items', cat: '收藏', title: '收藏', metric: 'itemsOwned', steps: [10, 20, 30, 40, 47, 55], name: (v) => t('收藏{n}项', { n: v }), desc: (v) => t('收集{n}项收藏', { n: v }) },
   { key: 'catComplete', cat: '收藏', title: '集齐一套', metric: 'catComplete', steps: [1, 3, 5, 8], name: (v) => t('{n}类全部集齐', { n: v }), desc: (v) => t('把{n}类收藏全部集齐', { n: v }) },
 ].forEach(addSeries);
 
@@ -112,6 +120,7 @@ export function trophyMetrics(snap) {
     unlocked: SKILLS.filter((x) => isUnlocked(prog, x.id)).length, mastered: SKILLS.filter((x) => isMastered(prog, x.id)).length,
     extras: s.extras || 0, extraBest: s.extraBest || 0, extraSolved: s.extraSolved || 0, maxCombo: s.maxCombo || 0,
     endlessRuns: s.endlessRuns || 0, endlessSolved: s.endlessSolved || 0, endlessBest: s.endlessBest || 0,
+    endlessRunBest: s.endlessRunBest || 0, endlessCleanWave: s.endlessCleanWave || 0,
     perfects: s.perfects || 0, firstTry: s.firstTry || 0, bestDopaL: Math.floor((s.bestDopaL || 0) + 1e-9), reviewSolved: s.reviewSolved || 0,
   };
   const stars = Object.fromEntries(SKILLS.map((x) => [x.id, starsOf(prog, x.id)]));

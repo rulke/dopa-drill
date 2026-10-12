@@ -15,7 +15,10 @@ export const PALETTES = {
   // Unlockable colours for the hero (id041, id044).
   gold: { body: '#ffc53d', inner: '#fff1b8', leg: '#ff7ab6', cheek: '#ffd9c2' },
   snow: { body: '#f4f6ff', inner: '#dde4ff', leg: '#3b6bff', cheek: '#ffd6e6' },
-  rainbow: { body: 'url(#dk-rainbow)', inner: '#fff4f9', leg: '#2f79f7', cheek: '#ffe6f0', flat: '#ff97bf' },
+  rainbow: { body: 'url(#dk-rainbow)', inner: '#fff4f9', leg: '#2f79f7', cheek: '#ffe6f0', flat: '#ff97bf',
+    grad: '<linearGradient id="dk-rainbow" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ff97bf"/><stop offset=".33" stop-color="#ffd452"/><stop offset=".66" stop-color="#5eddb8"/><stop offset="1" stop-color="#8fb4ff"/></linearGradient>' },
+  nebula: { body: 'url(#dk-nebula)', inner: '#efe6ff', leg: '#5b3fd6', cheek: '#ffd6e6', flat: '#a98bff',
+    grad: '<linearGradient id="dk-nebula" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#3b2f7a"/><stop offset=".38" stop-color="#7b5cff"/><stop offset=".72" stop-color="#ff7ab6"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>' },
 };
 
 // Costumes drawn over the original shape (docs/dopakichi.svg is never changed).
@@ -41,6 +44,9 @@ export const COSTUMES = {
   glasses: { face: `<g class="dk-l" fill="rgba(255,255,255,.25)"><circle cx="-23.4" cy="-93.8" r="15"/><circle cx="23.4" cy="-93.8" r="15"/></g><path class="dk-l" d="M-8.4 -95 Q0 -100 8.4 -95 M-38 -97 L-48 -101 M38 -97 L48 -101" fill="none"/>` },
   ribbon: { head: `<path class="dk-l" d="M0 -150 C-14 -176 -46 -170 -36 -150 C-30 -140 -12 -142 0 -150Z M0 -150 C14 -176 46 -170 36 -150 C30 -140 12 -142 0 -150Z" fill="#ff5a9c"/><circle class="dk-l" cx="0" cy="-151" r="7" fill="#ff7ab6"/><path d="M-28 -160 Q-20 -156 -14 -152 M28 -160 Q20 -156 14 -152" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".8"/>` },
   headphones: { head: `<path class="dk-l" d="M-60 -110 C-60 -178 60 -178 60 -110" fill="none" stroke-width="7" stroke="#1b1d4d"/><path d="M-60 -110 C-60 -178 60 -178 60 -110" fill="none" stroke="#a77bff" stroke-width="5"/><rect class="dk-l" x="-68" y="-122" width="16" height="30" rx="7" fill="#a77bff"/><rect class="dk-l" x="52" y="-122" width="16" height="30" rx="7" fill="#a77bff"/>` },
+  // id046 laurel: three leaves climbing each side of the head, mirrored, open at
+  // the top - a wreath, not a cap.
+  laurel: { head: `<path class="dk-l" d="M-51.5 -129.1Q-42.5 -127.3 -40.5 -114.9Q-52.0 -119.9 -51.5 -129.1ZM-41.1 -142.5Q-33.0 -137.9 -34.9 -125.5Q-44.3 -133.8 -41.1 -142.5ZM-24.9 -151.0Q-18.2 -144.6 -23.1 -133.0Q-30.2 -143.4 -24.9 -151.0Z M40.5 -129.1Q49.5 -127.3 51.5 -114.9Q40.0 -119.9 40.5 -129.1ZM34.9 -142.5Q43.0 -137.9 41.1 -125.5Q31.7 -133.8 34.9 -142.5ZM23.1 -151.0Q29.8 -144.6 24.9 -133.0Q17.8 -143.4 23.1 -151.0Z" fill="#ffd452"/>` },
   wizard: { head: `<path class="dk-l" d="M-52 -138 Q0 -152 52 -138 Q0 -128 -52 -138Z" fill="#5b3fd6"/><path class="dk-l" d="M-34 -141 C-20 -170 -4 -208 22 -222 C14 -200 26 -170 34 -141 Z" fill="#6f52ff"/><path class="dk-l" d="M-4 -182 L-1 -175 L6 -175 L0 -170 L3 -163 L-4 -167 L-10 -163 L-8 -170 L-14 -175 L-6 -175Z" fill="#ffd23f"/><circle class="dk-l" cx="22" cy="-222" r="5" fill="#ffd23f"/>` },
 };
 
@@ -123,6 +129,7 @@ export class Dopakichi {
     this.S = scale;
     this.lw = lineFor(scale);
     this.pal = PALETTES[palette];
+    this.palName = PALETTES[palette] ? palette : 'pink';
     this.id = uid++;
     this.x = 0; this.y = 0;
     this.home = { x: 0, y: 0 };
@@ -187,10 +194,10 @@ export class Dopakichi {
     }));
     const svg = this.layer.ownerSVGElement || this.layer;
     if (!document.getElementById('dk-style')) el('style', { id: 'dk-style' }, svg).textContent = STYLE;
-    if (!document.getElementById('dk-rainbow')) {
-      const defs = el('defs', {}, svg);
-      defs.innerHTML = '<linearGradient id="dk-rainbow" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ff97bf"/><stop offset=".33" stop-color="#ffd452"/><stop offset=".66" stop-color="#5eddb8"/><stop offset="1" stop-color="#8fb4ff"/></linearGradient>';
-    }
+    // A gradient palette brings its own <defs>; emit it once per document. The id
+    // is read out of the markup so a second gradient colour needs no code here.
+    const gradId = (this.pal.grad || '').match(/id="([^"]+)"/);
+    if (gradId && !document.getElementById(gradId[1])) el('defs', {}, svg).innerHTML = this.pal.grad;
     this.eyes = null; this.mouth = null;
     this.setFace(this.baseEyes || 'open', this.baseMouth || 'smile', true);
     this.setCostume(this.costume || null);
@@ -201,6 +208,7 @@ export class Dopakichi {
     const pal = PALETTES[name] || PALETTES.pink;
     if (pal === this.pal) return;
     this.pal = pal;
+    this.palName = PALETTES[name] ? name : 'pink';
     const vis = this.visible;
     this.root.remove(); this.armsFront.remove();
     this.build(this.front);
@@ -623,7 +631,7 @@ export function dopakichiSprite(palette = 'pink', size = 128) {
   const arm = (s) => `M${s * shoulder.x} ${shoulder.y} Q${s * 62} ${shoulder.y - 20} ${tip(s).x} ${tip(s).y}`;
   const svg = `<svg xmlns="${NS}" viewBox="-110 -170 220 176" width="${size}" height="${size * 176 / 220}">
   <style>svg{--dkw:3.4}${STYLE}</style>
-  ${footSVG(p, -1)}${footSVG(p, 1)}${bodySVG(p)}${earSVG(p, -1)}${earSVG(p, 1)}${headSVG(p)}
+  ${p.grad ? `<defs>${p.grad}</defs>` : ''}${footSVG(p, -1)}${footSVG(p, 1)}${bodySVG(p)}${earSVG(p, -1)}${earSVG(p, 1)}${headSVG(p)}
   ${[-1, 1].map((s) => `<ellipse cx="${s * cheek.x}" cy="${cheek.y}" rx="${cheek.rx}" ry="${cheek.ry}" fill="${p.cheek}"/><ellipse class="dk-l" cx="${s * brow.x}" cy="${brow.y - 4}" rx="${brow.rx}" ry="${brow.ry}" fill="${p.body}"/><g transform="translate(${s * eye.x} ${eye.y})">${EYE.happy()}</g>`).join('')}
   <g transform="translate(0 ${G.mouthY})">${MOUTH.grin}</g>
   ${[-1, 1].map((s) => `<path d="${arm(s)}" fill="none" stroke="${INK}" stroke-width="${G.arm + 6.8}" stroke-linecap="round"/><path d="${arm(s)}" fill="none" stroke="${p.body}" stroke-width="${G.arm}" stroke-linecap="round"/><circle class="dk-l" cx="${tip(s).x}" cy="${tip(s).y}" r="${G.hand}" fill="${p.body}"/>`).join('')}
@@ -639,7 +647,7 @@ export function dopakichiSVG(palette = 'pink', costume = null) {
   const c = (costume && COSTUMES[costume]) || {};
   const { eye, cheek, brow } = G;
   const armCol = p.flat || p.body;
-  const rb = p.body.startsWith('url(') ? '<defs><linearGradient id="dk-rainbow" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ff97bf"/><stop offset=".33" stop-color="#ffd452"/><stop offset=".66" stop-color="#5eddb8"/><stop offset="1" stop-color="#8fb4ff"/></linearGradient></defs>' : '';
+  const rb = p.grad ? `<defs>${p.grad}</defs>` : '';
   return `<svg xmlns="${NS}" viewBox="-112 -232 224 240" aria-hidden="true">${rb}<style>svg{--dkw:3.4}${STYLE}</style>
   ${c.back || ''}${footSVG(p, -1)}${footSVG(p, 1)}${bodySVG(p)}${earSVG(p, -1)}${earSVG(p, 1)}${headSVG(p)}
   ${[-1, 1].map((s) => `<ellipse cx="${s * cheek.x}" cy="${cheek.y}" rx="${cheek.rx}" ry="${cheek.ry}" fill="${p.cheek}"/><ellipse class="dk-l" cx="${s * brow.x}" cy="${brow.y}" rx="${brow.rx}" ry="${brow.ry}" fill="${armCol}"/><g transform="translate(${s * eye.x} ${eye.y})">${EYE.open(p.body.startsWith('url(') ? { body: armCol } : p)}</g>`).join('')}

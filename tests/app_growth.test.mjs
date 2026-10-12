@@ -65,3 +65,34 @@ test('compared with before: only improvements, enough answers, at most three (id
   assert.ok(!lines.some((x) => x.skill === 'b'));
   assert.ok(lines[0].gain >= lines[2].gain);
 });
+
+// ------------------------------------------------- the endless run's two axes
+// Both are read straight out of the run records, the way extraBest is, so no new
+// saved field is needed. They are the metrics two trophy series and five
+// collection items hang on, so a silent regression here would strand rewards.
+test('the endless run stats come out of the records', () => {
+  const run = (count, wave, firstRate, ok = count) => ({
+    mode: 'endless', day: '2026-10-01', count, ok, ng: count - ok,
+    firstRate, timeMs: 60000, dopaL: 5, endlessWave: wave, score: 500,
+  });
+  const s = statsFromHistory([
+    run(12, 3, 1),          // clean, short
+    run(40, 9, 0.8),        // longest, but sloppy
+    run(25, 12, 1),         // clean, deepest
+    { mode: 'level', day: '2026-10-01', ok: 10, ng: 0, count: 10, firstRate: 1, timeMs: 60000, dopaL: 3 },
+  ]);
+  assert.equal(s.endlessRuns, 3, 'only endless records count');
+  assert.equal(s.endlessSolved, 77);
+  assert.equal(s.endlessBest, 12, 'the deepest run, clean or not');
+  assert.equal(s.endlessRunBest, 40, 'the longest single run');
+  assert.equal(s.endlessCleanWave, 12, 'the deepest run with no wrong digit');
+  // A run that is not clean must not raise the clean-wave figure, however deep.
+  const sloppy = statsFromHistory([run(200, 40, 0.95)]);
+  assert.equal(sloppy.endlessCleanWave, 0);
+  assert.equal(sloppy.endlessBest, 40);
+  assert.equal(sloppy.endlessRunBest, 200);
+  // And the fields exist for a save that predates them.
+  const old = statsFromHistory([]);
+  assert.equal(old.endlessRunBest, 0);
+  assert.equal(old.endlessCleanWave, 0);
+});

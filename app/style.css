@@ -389,6 +389,21 @@ body.reduced .lights i, body.reduced .spot-l2, body.reduced .spot-r2 { animation
 body.reduced .rain { opacity: 0; animation: none; }
 body.reduced .beat-flash { opacity: 0; }
 
+/* ------------------------------------------------------------ curtain call
+   id046 落幕: the finale that closes the house. It lives under the actors
+   (z-index 3, the same layer as the beat flash) so the mascot performs in front
+   of the curtain and the result card stays in front of both. */
+.curtain { position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: rgba(10, 14, 38, .74); }
+.curtain-half { position: absolute; top: 0; bottom: 0; display: block;
+  background: repeating-linear-gradient(90deg, #6d1129 0 16px, #9c1f3d 16px 34px), #8e1a37;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, .45); }
+.curtain-half.left { right: 50%; }
+.curtain-half.right { left: 50%; }
+/* The light in the gap: a soft pool around where the mascot stands. */
+.curtain-gap { position: absolute; left: 50%; top: 0; bottom: 0; width: var(--gap, 50%); transform: translateX(-50%); display: block;
+  background: radial-gradient(ellipse at 50% 62%, rgba(255, 246, 200, .5), rgba(255, 246, 200, .12) 45%, transparent 72%); }
+body.reduced .curtain-half, body.reduced .curtain-gap { transition: none; }
+
 /* ------------------------------------------------------------ results */
 #screen-result, #screen-final { align-items: safe center; justify-content: center; padding: 20px 16px; overflow-y: auto; }
 #screen-result .result-card, #screen-final .result-card { margin: auto 0; flex: none; }

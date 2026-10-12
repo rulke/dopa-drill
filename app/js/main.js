@@ -893,6 +893,7 @@ const MARKS = {
   crown: (c) => `<path class="sp" d="M-50 30 L-58 -28 L-26 -2 L0 -46 L26 -2 L58 -28 L50 30 Z" fill="none" stroke="${c}" stroke-width="7" stroke-linejoin="round"/><path class="fl" d="M-50 30 L-58 -28 L-26 -2 L0 -46 L26 -2 L58 -28 L50 30 Z" fill="#ffd23f" opacity=".85"/><path class="sp" d="M-48 44 L48 44" stroke="${c}" stroke-width="7" stroke-linecap="round"/><circle class="fl" cx="0" cy="-46" r="7" fill="#ff4f6d"/><circle class="fl" cx="-58" cy="-28" r="6" fill="#3b6bff"/><circle class="fl" cx="58" cy="-28" r="6" fill="#3fdcb0"/><circle class="fl" cx="0" cy="12" r="9" fill="#ff7ab6"/>`,
   ring: (c) => `${Array.from({ length: 12 }, (_, i) => { const a = (i / 12) * Math.PI * 2; return `<path class="sp" d="M${(Math.cos(a) * 20).toFixed(1)} ${(Math.sin(a) * 20).toFixed(1)} L${(Math.cos(a) * 52).toFixed(1)} ${(Math.sin(a) * 52).toFixed(1)}" stroke="${['#ff4f6d', '#ffb000', '#3fdcb0', '#3b6bff'][i % 4]}" stroke-width="7" stroke-linecap="round"/>`; }).join('')}${Array.from({ length: 12 }, (_, i) => { const a = ((i + 0.5) / 12) * Math.PI * 2; return `<circle class="fl" cx="${(Math.cos(a) * 60).toFixed(1)}" cy="${(Math.sin(a) * 60).toFixed(1)}" r="5" fill="${c}"/>`; }).join('')}<circle class="fl" r="12" fill="#ffd23f"/>`,
   medal: (c) => `<path class="fl" d="M-30 -66 L-8 -18 L8 -18 L-14 -66Z" fill="#3b6bff"/><path class="fl" d="M30 -66 L8 -18 L-8 -18 L14 -66Z" fill="#ff4f6d"/><circle class="sp" cy="18" r="40" fill="none" stroke="${c}" stroke-width="8"/><circle class="fl" cy="18" r="34" fill="#ffd23f"/><path class="sp" d="M0 -6 L7 9 L23 10 L11 21 L15 37 L0 28 L-15 37 L-11 21 L-23 10 L-7 9Z" fill="none" stroke="${c}" stroke-width="5" stroke-linejoin="round"/>`,
+  heart: (c) => `<path class="sp" d="M0 50 C-52 14 -60 -18 -38 -38 C-20 -54 -2 -42 0 -26 C2 -42 20 -54 38 -38 C60 -18 52 14 0 50Z" fill="none" stroke="${c}" stroke-width="8" stroke-linejoin="round"/><path class="fl" d="M0 50 C-52 14 -60 -18 -38 -38 C-20 -54 -2 -42 0 -26 C2 -42 20 -54 38 -38 C60 -18 52 14 0 50Z" fill="#ff7ab6"/><path class="fl" d="M-34 -22 C-28 -38 -14 -38 -12 -27 C-10 -16 -22 -10 -34 -22Z" fill="#ffd6e6"/><circle class="fl" cx="36" cy="30" r="8" fill="#ffd23f"/><circle class="fl" cx="-42" cy="32" r="5" fill="#8fd3ff"/>`,
 };
 function drawMark(el, style, E, { preview = false } = {}) {
   const size = preview ? 120 : 110 + 50 * Math.min(1, E);
@@ -948,6 +949,9 @@ const CROWD_PALS = ['blue', 'yellow', 'mint', 'violet', 'pink'];
 function crowdLook(i) {
   const style = ul.variant(S.look && S.look.crowd);
   if (style === 'costume') { const keys = Object.keys(COSTUMES); return { pal: CROWD_PALS[i % 5], costume: keys[(i * 3 + 1) % keys.length] }; }
+  // id046 满座: the same dressed-up house, but the seats are filled from the
+  // first problem (see crowdFloor), and the palettes include the special ones.
+  if (style === 'full') { const keys = Object.keys(COSTUMES); return { pal: ['gold', 'rainbow', 'snow', 'blue', 'yellow', 'mint'][i % 6], costume: keys[(i * 5) % keys.length] }; }
   if (style === 'rainbow') return { pal: ['rainbow', 'gold', 'snow', 'rainbow', 'blue'][i % 5], costume: null };
   if (style === 'twins') return { pal: ul.variant(S.look.color), costume: hero.costume };
   return { pal: CROWD_PALS[i % 5], costume: null };
@@ -1137,7 +1141,12 @@ const CROWD_ROWS = [
   { off: 0.06, up: 18, s: 0.46 },
   { off: 0.115, up: 34, s: 0.34 },
 ];
-function ensureCrowd(L) {
+// 满座 fills every seat whatever the rung is; the seats are the three rows the
+// ladder opens at rung 13. Nothing else changes, so the rest of the show still
+// climbs normally underneath it.
+const crowdFloor = () => (ul.variant(S.look && S.look.crowd) === 'full' ? 13 : 0);
+function ensureCrowd(level) {
+  const L = Math.max(level, crowdFloor());
   const want = [];
   if (L >= 5) want.push({ i: 0, side: -1, s: CROWD_ROWS[0].s });
   if (L >= 7) want.push({ i: 1, side: 1, s: CROWD_ROWS[0].s });
@@ -1278,6 +1287,55 @@ const FINALES = {
     band.forEach(dropActor); banner.remove();
     fxBack.fireworks(W, H, 6, 0.06, 0.35);
     await wait(900);
+  },
+  // id046 curtain call: the house lights go down and the curtain closes on the
+  // run, the mascot left in the gap to take the bow, the audience throwing petals.
+  // The veil and the curtain sit in the fx-background layer (z-index 3), so the
+  // actors stay in front of the curtain and the card stays in front of both.
+  async curtain(W, H) {
+    const veil = document.createElement('div');
+    veil.className = 'curtain';
+    veil.innerHTML = '<i class="curtain-half left"></i><i class="curtain-half right"></i><i class="curtain-gap"></i>';
+    document.body.appendChild(veil);
+    const [l, r] = veil.querySelectorAll('.curtain-half');
+    const open = W * 0.62; const shut = W * 0.26;
+    l.style.width = `${open}px`; r.style.width = `${open}px`;
+    l.style.transform = `translateX(${-open}px)`; r.style.transform = `translateX(${open}px)`;
+    audio.play('swoosh', audio.now(), { v: 0.22 });
+    S.flash = 0.3;
+    await wait(140);
+    await tween(950, (k) => {
+      veil.style.opacity = String(0.2 + 0.8 * k);
+      l.style.transform = `translateX(${lerp(-open, -shut, k)}px)`;
+      r.style.transform = `translateX(${lerp(open, shut, k)}px)`;
+      veil.style.setProperty('--gap', `${lerp(W * 0.5, W * 0.3, k)}px`);
+    }, easeOutCubic);
+    // The performer steps into the light and bows to the house.
+    hero.place(W / 2, H * 0.66);
+    hero.setFace('happy', 'grin', true);
+    hero.hands.forEach((h) => { h.raise = 1; });
+    await wait(260);
+    await tween(760, (k) => { hero.rot = Math.sin(k * Math.PI) * 24; hero.lift = Math.sin(k * Math.PI) * 16; });
+    hero.rot = 0; hero.lift = 0;
+    // The house applauds, one row after the other.
+    crowd.forEach((m, i) => setTimeout(() => {
+      m.earL.kick(620); m.earR.kick(620); m.setFace('happy', 'grin', true);
+      m.hands.forEach((h) => { h.raise = 1; });
+    }, 90 * i));
+    audio.play('clap', audio.now() + 0.12, { v: 0.5 });
+    audio.play('clap', audio.now() + 0.34, { v: 0.34 });
+    fxBack.rain(W, 46, { kinds: ['petal', 'petal', 'confetti', 'heart'] });
+    fxBack.burst(W / 2, H * 0.34, { count: 60, speed: 700, kinds: ['petal', 'confetti', 'star'], up: 240, life: 0.7 });
+    await wait(320);
+    bigStamp(t('100分'));
+    S.shake = 10;
+    await wait(1200);
+    await tween(650, (k) => {
+      veil.style.opacity = String(1 - k);
+      l.style.transform = `translateX(${lerp(-shut, -open, k)}px)`;
+      r.style.transform = `translateX(${lerp(shut, open, k)}px)`;
+    }, easeInCubic);
+    veil.remove();
   },
 };
 
@@ -2561,6 +2619,7 @@ const BG_THUMB = {
   space: 'radial-gradient(circle at 30% 60%, #ff9ccc 0 9px, transparent 10px), radial-gradient(ellipse at 30% 60%, transparent 0 13px, #ffe98a 14px 15px, transparent 16px), radial-gradient(circle at 75% 30%, #8fd3ff 0 5px, transparent 6px), linear-gradient(135deg, #14082e, #4a1f6e)',
   festival: 'radial-gradient(ellipse at 30% 45%, #ff4f5e 0 9px, #1b1d4d 10px 11px, transparent 12px), radial-gradient(ellipse at 70% 45%, #ffd23f 0 9px, #1b1d4d 10px 11px, transparent 12px), repeating-linear-gradient(45deg, #fff1e0 0 8px, #ff9aa6 8px 16px)',
   paper: 'radial-gradient(circle at 25% 30%, #fff 0 3px, transparent 4px), radial-gradient(circle at 70% 70%, #fff 0 3px, transparent 4px), repeating-linear-gradient(0deg, #ff8fbd 0 10px, #1b1d4d 10px 11px, #8fb4ff 11px 21px, #1b1d4d 21px 22px, #ffd466 22px 32px, #1b1d4d 32px 33px)',
+  deep: 'repeating-linear-gradient(0deg, rgba(200,235,255,.45) 0 2px, transparent 2px 20px), linear-gradient(#04122c, #0b3a74)',
 };
 const PT_THUMB = {
   classic: '<rect x="-14" y="-10" width="11" height="7" fill="#ff7ab6" stroke="#1b1d4d" stroke-width="1.5" transform="rotate(-20)"/><rect x="2" y="2" width="11" height="7" fill="#3b6bff" stroke="#1b1d4d" stroke-width="1.5" transform="rotate(25)"/><rect x="0" y="-14" width="11" height="7" fill="#ffd23f" stroke="#1b1d4d" stroke-width="1.5"/>',
@@ -2569,23 +2628,25 @@ const PT_THUMB = {
   bubble: '<circle r="12" fill="rgba(191,234,255,.5)" stroke="#3b8fd6" stroke-width="2"/><circle cx="-4" cy="-4" r="3" fill="#fff"/>',
   candy: '<path d="M-8 0 L-16 -7 L-16 7Z M8 0 L16 -7 L16 7Z" fill="#ffd23f" stroke="#1b1d4d" stroke-width="2" stroke-linejoin="round"/><circle r="8.5" fill="#ff7ab6" stroke="#1b1d4d" stroke-width="2"/>',
   digit: '<text y="8" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="24" fill="#3fdcb0" stroke="#1b1d4d" stroke-width="3" paint-order="stroke">7</text>',
+  wave: '<path d="M-11 5 C-7 -11 9 -11 10 0 C11 8 2 9 1 3" fill="none" stroke="#1b1d4d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M-11 5 C-7 -11 9 -11 10 0 C11 8 2 9 1 3" fill="none" stroke="#8fd3ff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 const FINALE_THUMB = {
   classic: '<circle cy="6" r="13" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><circle cx="-14" cy="-2" r="7" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><circle cx="14" cy="-2" r="7" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><ellipse cy="8" rx="9" ry="7" fill="#fff3e4" stroke="#1b1d4d" stroke-width="1.5"/>',
   fireworks: '<g stroke-linecap="round" stroke-width="2.4">' + Array.from({ length: 10 }, (_, i) => { const a = (i / 10) * Math.PI * 2; return `<path d="M${(Math.cos(a) * 5).toFixed(1)} ${(Math.sin(a) * 5).toFixed(1)} L${(Math.cos(a) * 15).toFixed(1)} ${(Math.sin(a) * 15).toFixed(1)}" stroke="${['#ff4f6d', '#ffd23f', '#3b6bff'][i % 3]}"/>`; }).join('') + '</g>',
   rocket: '<g transform="rotate(-35) scale(.3)">' + ROCKET_SVG.replace(/^<svg[^>]*>|<\/svg>$/g, '') + '</g>',
   parade: '<rect x="-16" y="-12" width="32" height="12" rx="3" fill="#ff7ab6" stroke="#1b1d4d" stroke-width="2"/><path d="M-12 0 V12 M12 0 V12" stroke="#1b1d4d" stroke-width="2"/><circle cx="-12" cy="14" r="4" fill="#6fa0ff" stroke="#1b1d4d" stroke-width="1.5"/><circle cx="12" cy="14" r="4" fill="#ffd452" stroke="#1b1d4d" stroke-width="1.5"/>',
+  curtain: '<rect x="-19" y="-13" width="12" height="26" rx="2" fill="#8e1a37" stroke="#1b1d4d" stroke-width="2"/><rect x="7" y="-13" width="12" height="26" rx="2" fill="#8e1a37" stroke="#1b1d4d" stroke-width="2"/><path d="M0 -14 L7 14 L-7 14Z" fill="rgba(255,246,200,.55)"/><circle cy="-16" r="3" fill="#ffd23f"/>',
 };
-const CROWD_THUMB = { classic: ['blue', 'yellow', 'mint'], costume: ['blue', 'yellow', 'mint'], rainbow: ['rainbow', 'gold', 'snow'], twins: ['pink', 'pink', 'pink'] };
+const CROWD_THUMB = { classic: ['blue', 'yellow', 'mint'], costume: ['blue', 'yellow', 'mint'], rainbow: ['rainbow', 'gold', 'snow'], twins: ['pink', 'pink', 'pink'], full: ['gold', 'rainbow', 'snow'] };
 function itemThumb(it) {
   const v = ul.variant(it.id);
   if (it.cat === 'bg') return `<span class="th-bg" style="background:${BG_THUMB[v] || BG_THUMB.classic}"></span>`;
   if (it.cat === 'mark') return v === 'hanamaru' ? '<svg viewBox="-70 -70 140 140"><path d="M-2 -52 C38 -56 56 -20 50 14 C44 46 4 60 -28 46 C-56 32 -56 -14 -28 -38 C-10 -52 18 -48 32 -34" fill="none" stroke="#ff4f6d" stroke-width="9" stroke-linecap="round"/></svg>' : `<svg viewBox="-72 -72 144 144" overflow="visible">${MARKS[v]('#ff4f6d')}</svg>`;
   if (it.cat === 'particle') return `<svg viewBox="-20 -20 40 40">${PT_THUMB[v] || PT_THUMB.classic}</svg>`;
-  if (it.cat === 'music') return `<span class="th-music"><svg viewBox="-20 -20 40 40"><path d="M-6 10 V-14 L12 -18 V6" fill="none" stroke="#1b1d4d" stroke-width="3" stroke-linejoin="round"/><ellipse cx="-11" cy="11" rx="6.5" ry="5" fill="${{ classic: '#3fdcb0', chip: '#8fb4ff', matsuri: '#ff4f6d', brass: '#ffd23f', electro: '#a77bff' }[v] || '#3fdcb0'}" stroke="#1b1d4d" stroke-width="2.4"/><ellipse cx="7" cy="7" rx="6.5" ry="5" fill="${{ classic: '#3fdcb0', chip: '#8fb4ff', matsuri: '#ff4f6d', brass: '#ffd23f', electro: '#a77bff' }[v] || '#3fdcb0'}" stroke="#1b1d4d" stroke-width="2.4"/></svg></span>`;
+  if (it.cat === 'music') return `<span class="th-music"><svg viewBox="-20 -20 40 40"><path d="M-6 10 V-14 L12 -18 V6" fill="none" stroke="#1b1d4d" stroke-width="3" stroke-linejoin="round"/><ellipse cx="-11" cy="11" rx="6.5" ry="5" fill="${{ classic: '#3fdcb0', chip: '#8fb4ff', matsuri: '#ff4f6d', brass: '#ffd23f', electro: '#a77bff', endless: '#6fa0ff' }[v] || '#3fdcb0'}" stroke="#1b1d4d" stroke-width="2.4"/><ellipse cx="7" cy="7" rx="6.5" ry="5" fill="${{ classic: '#3fdcb0', chip: '#8fb4ff', matsuri: '#ff4f6d', brass: '#ffd23f', electro: '#a77bff', endless: '#6fa0ff' }[v] || '#3fdcb0'}" stroke="#1b1d4d" stroke-width="2.4"/></svg></span>`;
   if (it.cat === 'costume') return dopakichiSVG('pink', v === 'none' ? null : v);
   if (it.cat === 'color') return dopakichiSVG(v);
-  if (it.cat === 'crowd') { const pals = CROWD_THUMB[v] || CROWD_THUMB.classic; const cs = Object.keys(COSTUMES); return `<span class="th-crowd">${pals.map((pl, i) => dopakichiSVG(pl, v === 'costume' ? cs[(i * 3 + 1) % cs.length] : null)).join('')}</span>`; }
+  if (it.cat === 'crowd') { const pals = CROWD_THUMB[v] || CROWD_THUMB.classic; const cs = Object.keys(COSTUMES); return `<span class="th-crowd">${pals.map((pl, i) => dopakichiSVG(pl, (v === 'costume' || v === 'full') ? cs[(i * (v === 'full' ? 5 : 3)) % cs.length] : null)).join('')}</span>`; }
   if (it.cat === 'finale') return `<svg viewBox="-20 -20 40 40" overflow="visible">${FINALE_THUMB[v] || FINALE_THUMB.classic}</svg>`;
   return '';
 }

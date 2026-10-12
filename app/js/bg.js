@@ -95,6 +95,30 @@ vec3 sea(vec2 p, float r, float a, float E, float t){
   return col;
 }
 
+// 6: deep (id046): heavy swells rolling in one after another. The endless run's
+// sea - dark, slow and horizontal, where theme 2 is bright bubbles in a pool.
+vec3 deep(vec2 p, float r, float a, float E, float t){
+  vec3 col = mix(vec3(.02, .05, .14), vec3(.06, .2, .4), clamp(.5 + p.y * .85, 0., 1.));
+  float swell = 0.;
+  for (int i = 0; i < 4; i++) {
+    float fi = float(i);
+    float y = -.48 + fi * .34 + sin(p.x * (2.2 + fi * .5) + t * (.32 + fi * .11) + fi) * .055;
+    float d = abs(p.y - y);
+    swell += smoothstep(.13, 0., d) * (.22 + .1 * fi);
+    float crest = smoothstep(.17, 0., d) * smoothstep(.5, .95, sin(p.x * 9. + t * .85 + fi * 2.) * .5 + .5);
+    col += vec3(.72, .9, 1.) * crest * (.2 + .4 * E);
+  }
+  col = mix(col, vec3(.1, .3, .6), swell * .45);
+  col = mix(col, vec3(.01, .03, .09), smoothstep(.25, .95, E) * smoothstep(.15, .85, .5 - p.y) * .3);
+  col = mix(col, vec3(.75, .9, 1.), beatRings(r, t, E) * .3);
+  // The sea gets deeper as the show grows, which is also what keeps this theme
+  // dark: the centre glow and the hue wash are the same for every theme.
+  col = mix(col, vec3(.01, .02, .07), smoothstep(.25, 1., E) * .38);
+  float tn = smoothstep(.82, 1.08, E);
+  col = mix(col, hsv(fract(a / 6.2832 * 2. + r - t * .2 + uHue), .5, 1.), tn * .2 * smoothstep(.05, .4, r) * .5);
+  return col;
+}
+
 // 3: space: nebula, planets and warp lines -> a spinning rainbow galaxy.
 vec3 space(vec2 p, float r, float a, float E, float t){
   vec3 col = vec3(.08, .04, .18);
@@ -185,7 +209,8 @@ void main(){
   else if (uTheme < 2.5) col = sea(p, r, a, E, t);
   else if (uTheme < 3.5) col = space(p, r, a, E, t);
   else if (uTheme < 4.5) col = festival(p, r, a, E, t);
-  else col = paper(p, r, a, E, t);
+  else if (uTheme < 5.5) col = paper(p, r, a, E, t);
+  else col = deep(p, r, a, E, t);
   col += vec3(1., .96, .85) * exp(-r * r * 14.) * (.25 + .6 * uKick * E) * (uTheme > .5 && uTheme < 1.5 || uTheme > 2.5 && uTheme < 3.5 ? .5 : 1.);
   col = mix(col, col * vec3(.16, .12, .32), uReach * smoothstep(.08, .5, r));
   col = mix(col, vec3(1.), clamp(uFlash, 0., 1.));
@@ -195,7 +220,7 @@ void main(){
   gl_FragColor = vec4(col * alpha, alpha);
 }`;
 
-export const THEMES = ['classic', 'night', 'sea', 'space', 'festival', 'paper'];
+export const THEMES = ['classic', 'night', 'sea', 'space', 'festival', 'paper', 'deep'];
 const FALLBACK = [
   'repeating-conic-gradient(from 0deg at 50% 50%, #3b6bff 0 9deg, #ff7ab6 9deg 18deg)',
   'repeating-conic-gradient(from 0deg at 50% 50%, #1b1d4d 0 9deg, #3b2f7a 9deg 18deg)',
@@ -203,6 +228,7 @@ const FALLBACK = [
   'repeating-conic-gradient(from 0deg at 50% 50%, #14082e 0 9deg, #4a1f6e 9deg 18deg)',
   'repeating-conic-gradient(from 0deg at 50% 50%, #ff4f5e 0 9deg, #fff1e0 9deg 18deg)',
   'repeating-conic-gradient(from 0deg at 50% 50%, #ffb8d4 0 9deg, #c4d6ff 9deg 18deg)',
+  'repeating-conic-gradient(from 0deg at 50% 50%, #04122c 0 9deg, #0b3a74 9deg 18deg)',
 ];
 
 export class Backdrop {
@@ -245,7 +271,9 @@ export class Backdrop {
   setTheme(name) {
     const i = Math.max(0, THEMES.indexOf(name));
     this.state.theme = i;
-    this.fallback.style.background = FALLBACK[i];
+    // Every theme needs an entry here; without one the assignment is ignored and
+    // the previous theme's colours stay on screen.
+    this.fallback.style.background = FALLBACK[i] || FALLBACK[0];
   }
   render(t) {
     const s = this.state;

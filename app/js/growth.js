@@ -6,7 +6,7 @@ export function emptyStats() {
     problems: 0, cells: 0, firstTry: 0, misses: 0,
     plays: 0, modes: {}, perfects: 0, playMs: 0, bestDopaL: 0,
     extras: 0, extraSolved: 0, extraBest: 0,
-    endlessRuns: 0, endlessSolved: 0, endlessBest: 0,
+    endlessRuns: 0, endlessSolved: 0, endlessBest: 0, endlessRunBest: 0, endlessCleanWave: 0,
     maxCombo: 0, reviewSolved: 0,
     days: 0, lastDay: null,
     grades: {}, flags: {},
@@ -29,7 +29,15 @@ export function statsFromHistory(history = []) {
     if (h.firstRate != null) s.firstTry += Math.round(h.firstRate * (h.ok || h.count || 0));
     if (h.firstRate === 1 && h.mode !== 'review') s.perfects += 1;
     if (h.extraOk != null) { s.extras += 1; s.extraSolved += h.extraOk; s.extraBest = Math.max(s.extraBest, h.extraOk); }
-    if (h.mode === 'endless') { s.endlessRuns += 1; s.endlessSolved += h.ok || 0; s.endlessBest = Math.max(s.endlessBest, h.endlessWave || 0); }
+    if (h.mode === 'endless') {
+      s.endlessRuns += 1;
+      s.endlessSolved += h.ok || 0;
+      s.endlessBest = Math.max(s.endlessBest, h.endlessWave || 0);
+      // Longest single run, and the deepest run that never got a digit wrong.
+      // Both read fields the record already carries, so nothing new is stored.
+      s.endlessRunBest = Math.max(s.endlessRunBest, h.count || 0);
+      if (h.firstRate === 1) s.endlessCleanWave = Math.max(s.endlessCleanWave, h.endlessWave || 0);
+    }
     s.playMs += h.timeMs || 0;
     s.bestDopaL = Math.max(s.bestDopaL, h.dopaL || 0);
     if (h.mode === 'grade' && h.grade) s.grades[h.grade] = (s.grades[h.grade] || 0) + 1;

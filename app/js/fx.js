@@ -250,6 +250,8 @@ const THEME_INIT = {
   bubble: (p) => { p.color = pick(['#bfeaff', '#d9f7ff', '#c8d7ff']); p.g = -120; p.drag = 1.8; p.vr = 0; p.size *= rand(0.8, 1.6); },
   candy: (p) => { p.color = pick(['#ff7ab6', '#ffd23f', '#3fdcb0', '#8fb4ff', '#ff9a3c']); },
   digit: (p) => { p.color = pick(['#ff7ab6', '#3b6bff', '#ffd23f', '#3fdcb0', '#a77bff']); p.str = String(Math.floor(Math.random() * 10)); p.vr = rand(-5, 5); },
+  // id046 浪花: a spray curl, the endless mode's shape for confetti.
+  wave: (p) => { p.color = pick(['#8fd3ff', '#bfeaff', '#d9f7ff', '#a8e6ff']); p.vr = rand(-3, 3); p.g = 150; p.drag = 1.1; p.life *= 1.2; },
 };
 const THEME_DRAW = {
   note: (fx, p) => fx.sprite(`nt${p.color}`, 22, 26, (g) => {
@@ -274,6 +276,12 @@ const THEME_DRAW = {
   digit: (fx, p) => fx.sprite(`dg${p.color}${p.str}`, 20, 24, (g) => {
     g.font = '400 22px "Dela Gothic One", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.lineWidth = 4; g.lineJoin = 'round'; g.strokeStyle = INK; g.strokeText(p.str, 0, 1); g.fillStyle = p.color; g.fillText(p.str, 0, 1);
+  }),
+  wave: (fx, p) => fx.sprite(`wv${p.color}`, 28, 24, (g) => {
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); g.moveTo(-11, 6); g.bezierCurveTo(-7, -12, 10, -12, 11, 0); g.bezierCurveTo(12, 9, 2, 10, 1, 3);
+    g.strokeStyle = INK; g.lineWidth = 5; g.stroke();
+    g.strokeStyle = p.color; g.lineWidth = 2.8; g.stroke();
   }),
 };
 export const PARTICLE_THEMES = Object.keys(THEME_DRAW);

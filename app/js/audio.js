@@ -493,6 +493,36 @@ export const SONGS = {
       if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.2 });
     },
   },
+  // id046 无尽: a tide. A bell marks the downbeat, the bass swells under it, and
+  // the melody is one rising figure that comes back every bar - the endless run's
+  // own shape, where the next wave is the same wave one step further out. Am-F-C-G
+  // so the loop ends on the lift back into the top of the progression.
+  endless: {
+    name: '无尽', prog: [chord(9, [0, 3, 7]), chord(5, [0, 4, 7]), chord(0, [0, 4, 7]), chord(7, [0, 4, 7])],
+    hook: [[76, 79, 81, 79, 76, 74, 72, 74], [77, 81, 84, 81, 79, 77, 76, 77], [79, 84, 83, 79, 76, 79, 81, 79], [74, 79, 83, 79, 81, 79, 77, 74]],
+    step(e, s, bar, t, L, ch, k) {
+      // The tide mark: one bell per bar, and the swell under it.
+      if (s === 0) e.play('bell', t, { m: ch.tones[0] + 12 + k, dur: e.stepDur * 7, v: 0.16 + 0.02 * Math.min(L, 8) });
+      if (L >= 1 && s % 4 === 0) e.play('bass', t, { m: ch.bass + k, dur: e.stepDur * 3, v: 0.4 });
+      if (L >= 2 && s % 8 === 6) e.play('sub', t, { m: ch.bass + k + 7, dur: e.stepDur * 2, v: 0.28 });
+      const kick = (L >= 3 && s % 4 === 0) || (L >= 1 && (s === 0 || s === 8));
+      if (kick) { e.play('kick', t, { v: L < 3 ? 0.6 : 0.85 }); e.kicks.push(t); }
+      if (L >= 3 && (s === 4 || s === 12)) e.play('clap', t, { v: 0.6 });
+      if (L >= 4 && s % 4 === 2) e.play('hat', t, { v: 0.18, open: L >= 7 });
+      if (L >= 5 && s % 2 === 1) e.play('shaker', t, { v: 0.05 });
+      if (L >= 5 && s % 2 === 0) e.play('pluck', t, { m: ch.tones[[0, 1, 2, 1][(s >> 1) % 4]] + 24 + k, dur: e.stepDur * 0.7, v: 0.045, pan: s % 4 ? 0.35 : -0.35 });
+      if (L >= 6 && s === 0) e.play('pad', t, { notes: ch.tones.map((m) => m + 12 + k), dur: e.stepDur * 15, v: 0.05, bright: 1400 + 90 * L });
+      if (L >= 7 && s % 8 === 4) e.play('stab', t, { notes: ch.tones.map((m) => m + 12 + k), v: 0.05 });
+      if (L >= 8 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('bell', t, { m: m + k, dur: e.stepDur * 2.2, v: 0.085 }); }
+      if (L >= 9 && s === 0) e.play('choir', t, { notes: ch.tones.map((m) => m + 12 + k), dur: e.stepDur * 15, v: 0.045 });
+      if (L >= 9 && s === 0 && bar === 0) e.play('crash', t, { v: 0.24 });
+      if (L >= 11 && s % 2 === 1) e.play('noiseHat', t, { v: 0.035 });
+      if (L >= 13 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('glock', t, { m: m - 12 + k, dur: e.stepDur * 1.6, v: 0.05, pan: s % 4 ? -0.4 : 0.4 }); }
+      if (L >= 15 && s % 2 === 0) { const m = this.hook[bar][s / 2]; if (m) e.play('choir', t, { notes: [m, m + 7].map((n) => n + k), dur: e.stepDur * 2, v: 0.03 }); }
+      if (L >= 15 && s === 0 && bar === 3) e.play('impact', t, { v: 0.16 });
+      if (L >= 5 && bar === 3 && s >= 12) e.play('snare', t, { v: 0.16 + (s - 12) * 0.08 });
+    },
+  },
 };
 void DRUMS;
 

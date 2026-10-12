@@ -88,6 +88,20 @@ addItems([
   { id: 'finale:parade', cat: 'finale', name: '游行', trophy: 'streak-10' },
   { id: 'finale:rocket', cat: 'finale', name: '火箭', trophy: 'extras-20' },
 ]);
+// id046: the endless mode's rewards. Its twelve trophies used to unlock nothing
+// at all, so the mode that is played for its own sake fed no part of the
+// collection. One item per trophy, spread over the categories the mode can speak
+// to; the two most expensive rewards sit on its two hardest feats.
+addItems([
+  { id: 'crowd:full', cat: 'crowd', name: '满座', trophy: 'endlessRuns-3' },
+  { id: 'color:nebula', cat: 'color', name: '星云', trophy: 'endlessRuns-30' },
+  { id: 'mark:heart', cat: 'mark', name: '心心', trophy: 'endlessRunBest-20' },
+  { id: 'particle:wave', cat: 'particle', name: '浪花', trophy: 'endlessRunBest-50' },
+  { id: 'bg:deep', cat: 'bg', name: '深浪', trophy: 'endlessBest-10' },
+  { id: 'costume:laurel', cat: 'costume', name: '月桂冠', trophy: 'endlessBest-20' },
+  { id: 'finale:curtain', cat: 'finale', name: '落幕', trophy: 'endlessClean-12' },
+  { id: 'music:endless', cat: 'music', name: '无尽', trophy: 'endlessBest-30' },
+]);
 
 export const isUnlocked = (it, got = {}) => !!(it && (it.base || (it.trophy && got[it.trophy])));
 export const unlockedIn = (cat, got) => ITEMS.filter((it) => it.cat === cat && isUnlocked(it, got));
