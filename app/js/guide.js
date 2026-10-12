@@ -3,11 +3,27 @@ import { t } from './i18n.js';
 
 const INTRO = { title: '怎么玩', text: '题目有3种\n选择方式哦' };
 const LEVEL = { target: '#start', title: '我的等级', text: '适合现在水平的题目。\n先从实力测试开始' };
+const ENDLESS = { target: '#endless', title: '无尽挑战', text: '答错扣命，命用完就结束。\n每5次一次答对升1波' };
 const GRADES = { target: '.grades', title: '1年级～6年级', text: '按年级集中练习\n各类题目' };
 const TREE = { target: '#open-tree', title: '技能树', text: '选一道想练的题目\n开始练习' };
 const TROPHY = { target: '#open-trophy', title: '奖杯', text: '边玩边收集。\n坚持玩会越攒越多' };
 const COLLECTION = { target: '#open-collect', title: '收藏', text: '用奖杯奖励兑换的\n背景、音乐、装扮等\n都可以在这里选择' };
+const GROWTH = { target: '#open-growth', title: '成长', text: '这周练了多少、会了什么、\n还记得吗、坚持' };
 const LAST = { target: '#start', title: '犹豫就选我的等级！', text: '本说明随时可以\n用？再看一遍', recommend: true };
+
+// The tour's pages, in the order the title screen shows them. The first run gets
+// the short version; the "?" gets every entry that can be tapped. Exported so a
+// test can check that a new button on the title screen cannot go unmentioned
+// here - which is how 无尽挑战 and 成长 were missed for two releases.
+//
+// 复习 is deliberately absent: its button is `hidden` until there is something
+// to review, and a page pointed at a hidden element spotlight a zero-size rect
+// in the corner (see the `if (target)` branch in show()). It needs a
+// visibility guard before it can be added.
+export function guidePages(help) {
+  return [INTRO, LEVEL, ...(help ? [ENDLESS] : []), GRADES, TREE,
+    ...(help ? [TROPHY, COLLECTION, GROWTH] : []), LAST];
+}
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // Use measured body + arm bounds. Hard constraints always outrank label coverage.
@@ -240,7 +256,7 @@ export function createGuide({ hero, reduced, onClose }) {
   function open({ help = false } = {}) {
     if (active) return;
     saved = { focus: document.activeElement, scroll: title.scrollTop, inert: app.inert, bodyParent: hero.root.parentNode, armsParent: hero.armsFront.parentNode };
-    pages = [INTRO, LEVEL, GRADES, TREE, ...(help ? [TROPHY, COLLECTION] : []), LAST];
+    pages = guidePages(help);
     index = 0; active = true;
     overlay.hidden = false;
     document.body.classList.add('guide-open');

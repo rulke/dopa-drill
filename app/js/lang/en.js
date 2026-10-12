@@ -256,10 +256,12 @@ export const en = {
   // ---------------------------------------------------------------- guide
   '怎么玩': 'How to play', '题目有3种\n选择方式哦': 'There are 3 ways\nto pick problems',
   '适合现在水平的题目。\n先从实力测试开始': 'Problems that fit you right now.\nIt starts with a check-up',
+  '答错扣命，命用完就结束。\n每5次一次答对升1波': 'A wrong digit costs a life,\nand they do not come back.\nEvery 5 first-try solves is a wave',
   '1年级～6年级': 'Grades 1-6', '按年级集中练习\n各类题目': 'Practice each grade\'s\nproblems in one go',
   '选一道想练的题目\n开始练习': 'Pick a problem type\nand practice it',
   '边玩边收集。\n坚持玩会越攒越多': 'Earned by playing.\nThey keep stacking up',
   '用奖杯奖励兑换的\n背景、音乐、装扮等\n都可以在这里选择': 'Trophy rewards: backgrounds,\nmusic, costumes and more\ncan be picked here',
+  '这周练了多少、会了什么、\n还记得吗、坚持': 'How much you practiced this week,\nwhat you know, what stuck',
   '犹豫就选我的等级！': 'Not sure? Pick My level!',
   '本说明随时可以': 'You can read this again', '再看一遍': 'with the ? button',
   '本说明随时可以\n用？再看一遍': 'You can read this again\nwith the ? button',

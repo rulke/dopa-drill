@@ -22,7 +22,20 @@ export const PALETTES = {
 // head: moves with the head; back: behind the body (capes).
 export const COSTUMES = {
   cap: { head: `<path class="dk-l" d="M-44 -133 C-44 -166 44 -166 44 -133 Z" fill="#3b6bff"/><path class="dk-l" d="M-6 -133 C10 -140 52 -142 60 -132 C52 -126 20 -126 -6 -133Z" fill="#2a4fd6"/><circle class="dk-l" cx="0" cy="-160" r="5" fill="#ffd23f"/><path d="M-30 -147 Q0 -158 30 -147" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>` },
-  hachimaki: { head: `<path class="dk-l" d="M-55 -128 Q0 -142 55 -128 L55 -116 Q0 -130 -55 -116Z" fill="#fff"/><circle cx="0" cy="-129" r="6" fill="#ff4f6d"/><path class="dk-l" d="M50 -124 Q70 -132 82 -122 Q70 -118 56 -120Z M52 -120 Q66 -110 74 -98 Q62 -104 52 -114Z" fill="#fff"/>` },
+  // The band is four flat segments, not one white path: their edges are exact
+  // sub-curves of the band outline below, so the ink stroke still runs around the
+  // whole thing and the colour changes happen inside it. A gradient would need a
+  // <defs> in both this renderer and dopakichiSVG(), and the crowd wears the
+  // hachimaki at 0.3 scale where a gradient is a 4px smear. The two tips echo the
+  // band's right end.
+  hachimaki: { head:
+    '<path d="M-55 -128Q-41.25 -131.5 -27.5 -133.25L-27.5 -121.25Q-41.25 -119.5 -55 -116Z" fill="#ff97bf"/>'
+    + '<path d="M-27.5 -133.25Q-13.75 -135 0 -135L0 -123Q-13.75 -123 -27.5 -121.25Z" fill="#ffd452"/>'
+    + '<path d="M0 -135Q13.75 -135 27.5 -133.25L27.5 -121.25Q13.75 -123 0 -123Z" fill="#5eddb8"/>'
+    + '<path d="M27.5 -133.25Q41.25 -131.5 55 -128L55 -116Q41.25 -119.5 27.5 -121.25Z" fill="#8fb4ff"/>'
+    + '<path class="dk-l" d="M-55 -128 Q0 -142 55 -128 L55 -116 Q0 -130 -55 -116Z" fill="none"/>'
+    + '<path class="dk-l" d="M50 -124 Q70 -132 82 -122 Q70 -118 56 -120Z" fill="#5eddb8"/>'
+    + '<path class="dk-l" d="M52 -120 Q66 -110 74 -98 Q62 -104 52 -114Z" fill="#8fb4ff"/>' },
   cape: { back: `<path class="dk-l" d="M-30 -58 C-60 -30 -64 -10 -58 4 L58 4 C64 -10 60 -30 30 -58 Z" fill="#ff4f6d"/><path d="M-50 -2 L50 -2" stroke="#ffd23f" stroke-width="5"/>`, head: `<path class="dk-l" d="M-24 -66 Q0 -58 24 -66 L20 -58 Q0 -52 -20 -58Z" fill="#ff4f6d"/><circle class="dk-l" cx="0" cy="-59" r="4.5" fill="#ffd23f"/>` },
   crown: { head: `<path class="dk-l" d="M-32 -140 L-36 -176 L-18 -156 L0 -184 L18 -156 L36 -176 L32 -140 Z" fill="#ffd23f"/><circle class="dk-l" cx="0" cy="-160" r="5" fill="#ff4f6d"/><circle class="dk-l" cx="-22" cy="-150" r="3.5" fill="#3b6bff"/><circle class="dk-l" cx="22" cy="-150" r="3.5" fill="#3fdcb0"/>` },
   glasses: { face: `<g class="dk-l" fill="rgba(255,255,255,.25)"><circle cx="-23.4" cy="-93.8" r="15"/><circle cx="23.4" cy="-93.8" r="15"/></g><path class="dk-l" d="M-8.4 -95 Q0 -100 8.4 -95 M-38 -97 L-48 -101 M38 -97 L48 -101" fill="none"/>` },

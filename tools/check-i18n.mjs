@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { en } from '../app/js/lang/en.js';
 import { ja } from '../app/js/lang/ja.js';
 import { zh } from '../app/js/lang/zh.js';
+import { guidePages } from '../app/js/guide.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'app');
@@ -46,13 +47,15 @@ for (const m of trophies.matchAll(/title: '([^']+)'|cat: '([^']+)'/g)) keys.add(
 const scoring = readFileSync(join(app, 'js', 'scoring.js'), 'utf8');
 for (const m of scoring.matchAll(/\[\d+, '([^']+)'\]/g)) keys.add(m[1]);
 
-// Keys that only appear through variables (guide pages, caps, marks).
+// Keys that only appear through variables (caps, marks).
 keys.add('正确', '100分', '100分！', '多巴胺口算', '怎么玩', '我的等级', '技能树', '奖杯', '收藏', '复习', '练习', '演示', '口算');
-for (const k of [
-  '题目有3种\n选择方式哦', '适合现在水平的题目。\n先从实力测试开始', '1年级～6年级', '按年级集中练习\n各类题目',
-  '选一道想练的题目\n开始练习', '边玩边收集。\n坚持玩会越攒越多', '用奖杯奖励兑换的\n背景、音乐、装扮等\n都可以在这里选择',
-  '犹豫就选我的等级！', '本说明随时可以\n用？再看一遍', '本说明随时可以', '再看一遍', '推荐',
-]) keys.add(k);
+keys.add('推荐');
+// The tour's captions reach t() through page objects, so the matcher above cannot
+// see them. They are read from guide.js itself rather than listed here: a listed
+// version only stays right until someone adds a page, and build_fonts.mjs builds
+// the Chinese subset from this same set, so a forgotten caption would ship as
+// missing glyphs rather than as a visible error.
+for (const page of [...guidePages(false), ...guidePages(true)]) { keys.add(page.title); keys.add(page.text); }
 
   return keys;
 }
