@@ -110,8 +110,16 @@ function setLevelClasses(L) {
   for (let i = 0; i <= LEVEL_MAX; i++) body.classList.toggle(`lv${i}`, i <= L);
 }
 
+// How strongly the backdrop burns while the collection is open. The shader's alpha
+// is 0.32 at 0.3, which measured as a flat wash for every background (range under
+// 10 of 255); 0.55 lands near the curve's shoulder and keeps them readable.
+const PREVIEW_E = 0.55;
+
 function showScreen(name) {
   S.screen = name;
+  // The collection fades the backdrop down to its own preview level; a floor keeps
+  // that from washing a background out entirely.
+  bg.state.floor = name === 'collect' ? PREVIEW_E : 0;
   $$('.screen').forEach((s) => s.classList.toggle('is-active', s.id === `screen-${name}`));
   const el = $(`#screen-${name}`);
   if (!S.reduced) tween(260, (k) => { el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * 18}px)`; }).then(() => { el.style.transform = ''; });
@@ -2661,7 +2669,7 @@ function openCollection() {
   audio.unlock();
   audio.play('blip', audio.now(), { m: 79, v: 0.1 });
   checkTrophies();
-  S.previewE = 0.3;
+  S.previewE = PREVIEW_E;
   showScreen('collect');
   renderCollection();
   requestAnimationFrame(layoutActors);
@@ -2684,16 +2692,19 @@ function renderCollection() {
   $('#co-now').textContent = t('{cat}：{name}', { cat: catName(co.cat), name: auto ? t('随机') : (ul.ITEM[eq[co.cat]] ? t(ul.ITEM[eq[co.cat]].name) : '') });
 }
 // Try an item out on this screen.
+let previewToken = 0;
 function previewItem(id) {
   clearPreviewCrowd();
+  // Any exposure tween from the last preview stops writing here.
+  const token = ++previewToken;
   const it = ul.ITEM[id] || ul.ITEMS.find((x) => x.cat === co.cat && x.base);
   const look = { ...titleLook(), [it.cat]: it.id };
   applyLook(look);
   const v = ul.variant(it.id);
   const b = $('#co-preview').getBoundingClientRect();
   const cx = b.left + b.width / 2; const cy = b.top + b.height * 0.45;
-  S.previewE = 0.3;
-  if (it.cat === 'bg') tween(1400, (k) => { S.previewE = 0.3 + 0.8 * Math.sin(Math.min(1, k * 1.3) * Math.PI / 2); }, easeOutCubic);
+  S.previewE = PREVIEW_E;
+  if (it.cat === 'bg') tween(1400, (k) => { if (token === previewToken) S.previewE = PREVIEW_E + 0.8 * Math.sin(Math.min(1, k * 1.3) * Math.PI / 2); }, easeOutCubic);
   if (it.cat === 'mark') hanamaru(0.9, $('#co-mark'), v);
   if (it.cat === 'particle') for (let i = 0; i < 3; i++) setTimeout(() => fx.burst(cx, cy, { count: 40, kinds: ['confetti'], speed: 520, up: 180 }), i * 250);
   if (it.cat === 'music') { audio.key = 0; audio.setLevel(8, 124); audio.startMusic(); co.timer = setTimeout(() => audio.stopMusic(), 7000); }

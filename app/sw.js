@@ -6,7 +6,7 @@
 // Bump CACHE_VERSION on every release. That is what makes an update land: the
 // new worker installs a fresh cache, and the old one is dropped once the new
 // version claims the clients.
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v12';
 const CACHE = `dopa-drill-${CACHE_VERSION}`;
 
 // The whole app. Fonts are in here too - they are the largest files and the

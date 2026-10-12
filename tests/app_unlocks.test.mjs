@@ -59,3 +59,20 @@ test('the two longest tab labels have a short form', () => {
     assert.ok(cat.short.length < cat.name.length);
   }
 });
+
+// ------------------------------------------------- the collection's preview light
+// The backdrop's alpha curve is 0.32 at an exposure of 0.3. Measured across all
+// five backgrounds at that level, the visible band flattened to a luminance range
+// of 1.9-9.2 out of 255 - a background on that screen looked like no background at
+// all, which is what "my background disappears in the collection" turned out to be.
+// 0.55 sits near the curve's shoulder and measured 41-165.
+test('the collection preview gives the backdrop enough light to be seen', () => {
+  const main = readFileSync(new URL('../app/js/main.js', import.meta.url), 'utf8');
+  const m = main.match(/const PREVIEW_E = ([\d.]+);/);
+  assert.ok(m, 'the preview exposure constant went missing');
+  assert.ok(Number(m[1]) >= 0.5, `a preview exposure of ${m[1]} washes every background out`);
+  assert.match(main, /bg\.state\.floor = name === 'collect' \? PREVIEW_E : 0/,
+    'the collection must also floor the backdrop, so nothing can fade it away entirely');
+  assert.match(readFileSync(new URL('../app/js/bg.js', import.meta.url), 'utf8'), /alpha = max\(alpha, clamp\(uFloor/,
+    'and the shader has to honour that floor');
+});

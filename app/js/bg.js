@@ -3,7 +3,7 @@
 
 const VERT = `attribute vec2 p; void main(){ gl_Position = vec4(p, 0., 1.); }`;
 const FRAG = `precision highp float;
-uniform vec2 uRes; uniform vec2 uCenter; uniform float uTime, uE, uKick, uFlash, uReach, uHue, uTheme;
+uniform vec2 uRes; uniform vec2 uCenter; uniform float uTime, uE, uKick, uFlash, uReach, uHue, uTheme, uFloor;
 vec3 hsv(float h, float s, float v){ vec3 k = clamp(abs(mod(h*6. + vec3(0.,4.,2.), 6.) - 3.) - 1., 0., 1.); return v * mix(vec3(1.), k, s); }
 float hash(vec2 c){ return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
 mat2 rot(float a){ float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
@@ -95,34 +95,60 @@ vec3 sea(vec2 p, float r, float a, float E, float t){
   return col;
 }
 
-// 6: steps (id046): a staircase of lights climbing the frame, one more rung lit for
-// every rung of the show. The endless ladder itself, drawn in the palette's own
-// hues - the base pairs the ink every outline uses with the sea's blue, which is
-// where the dark themes already live.
+// 6: steps (id046): a staircase of light climbing corner to corner, one more step
+// lit for every rung of the show. Six slabs, each a bright top edge over a darker
+// front; dust drifting up through the light; a bloom on the step that has just come
+// on, and cream on the one about to. A shape, a texture and something that answers
+// E - the same three layers every other theme here is built from.
+vec3 accentAt(float i){
+  // The five colours the cards, the confetti and the crowd all draw from.
+  if (i < .5) return vec3(1., .592, .749);
+  if (i < 1.5) return vec3(1., .824, .247);
+  if (i < 2.5) return vec3(.247, .863, .690);
+  if (i < 3.5) return vec3(.561, .706, 1.);
+  return vec3(.655, .482, 1.);
+}
 vec3 steps_(vec2 p, float r, float a, float E, float t){
-  // p is centred on the card, so p.y ~ -.29 is the top of the screen and the card
-  // starts around .19: the background that can actually be seen is that band, and
-  // the rungs live in it. Placed around zero they sat behind the card and the pad.
-  vec3 col = mix(vec3(.086, .094, .286), vec3(.129, .31, .573), clamp(.55 + p.y * 1.6, 0., 1.));
-  for (int i = 0; i < 5; i++) {
+  // Ink to the night theme's violet: the dark end this palette already uses.
+  vec3 col = mix(vec3(.113, .102, .286), vec3(.055, .063, .196), clamp(.5 - p.y * .5, 0., 1.));
+  float climb = E * 5.2;
+  for (int i = 0; i < 6; i++) {
     float fi = float(i);
-    float y = -.24 + fi * .105;
-    // The rung lights up as the show reaches it. Written as an ascending smoothstep:
-    // the descending form (edges the other way round) is undefined in GLSL and this
-    // driver reads it as zero, which is how the first draft lit nothing at all.
-    float on = smoothstep(fi - .05, fi + .45, E * 4.6);
-    float bar = 1. - smoothstep(0., .038, abs(p.y - y));
-    // Broken into blocks so it reads as a stair, not as a stripe.
-    float rung = 1. - smoothstep(0., .34, abs(fract((p.x + .5) * 2.2 + fi * .37) - .5) - .2);
-    vec3 c = hsv(fract(.06 + fi * .17 + uHue), .68, 1.);
-    col = mix(col, c, bar * rung * on * (.42 + .3 * uKick));
-    col += c * (1. - smoothstep(0., .08, abs(p.y - y))) * rung * on * .1;
+    // A horizontal tread whose right-hand end walks outwards as the steps rise:
+    // the ends are the staircase. Tilting the treads instead (the first draft) just
+    // made six parallel streaks, so the tread stays flat and the climb is the ends.
+    float y = .20 - fi * .10;
+    float xEnd = -.20 + fi * .10;
+    float out_ = 1. - smoothstep(-.015, .015, p.x - xEnd);
+    float tread = p.y - y;
+    vec3 c = accentAt(mod(fi, 5.));
+    // Unlit steps stay as a dim silhouette, so the shape reads before it lights.
+    float on = smoothstep(fi - .1, fi + .5, climb);
+    float lit = .2 + .8 * on;
+    // The lit top edge and its halo, then the riser that drops to the step below.
+    float edge = 1. - smoothstep(0., .011, abs(tread));
+    col += c * edge * out_ * lit * (.85 + .45 * uKick);
+    col += c * exp(-abs(tread) * 70.) * out_ * lit * (.5 + .5 * uKick);
+    float riser = (1. - smoothstep(0., .009, abs(p.x - xEnd))) * step(y, p.y) * step(p.y, y + .1);
+    col = mix(col, c * .55, riser * lit * .9);
+    // Cream on the step that is about to light, so the climb has a next.
+    col = mix(col, vec3(1., .965, .784), exp(-(climb - fi) * (climb - fi) * 1.4) * edge * out_ * .6);
   }
-  // Cream on the top step, the colour the spotlights and the paper use.
-  float lit = smoothstep(.5, 1.05, E);
-  col = mix(col, vec3(1., .965, .784), (1. - smoothstep(0., .05, abs(p.y + .24))) * lit * .65);
+  // A pool of warm light on the floor the staircase climbs from.
+  col = mix(col, vec3(1., .94, .8), exp(-length(vec2(p.x * .8, (p.y - .34) * 2.6)) * 5.5) * (.12 + .1 * E));
+  // Dust rising through the light: the small texture that keeps this readable even
+  // when the backdrop is faded down behind a preview.
+  vec2 duv = p * 9. + vec2(0., t * .35 - uHue);
+  vec2 df = fract(duv) - .5;
+  float dh = hash(floor(duv));
+  float mote = (1. - smoothstep(.03, .09, length(df))) * step(.6, dh) * smoothstep(.1, .5, E);
+  col += vec3(1., .97, .86) * mote * (.45 + .55 * sin(t * 2. + dh * 20.));
+  col = mix(col, vec3(.85, .95, 1.), beatRings(r, t, E) * .18);
+  float tn = smoothstep(.82, 1.08, E);
+  col = mix(col, hsv(fract(a / 6.2832 * 2. + r - t * .2 + uHue), .45, 1.), tn * .18 * smoothstep(.05, .4, r) * .5);
   return col;
 }
+
 // 3: space: nebula, planets and warp lines -> a spinning rainbow galaxy.
 vec3 space(vec2 p, float r, float a, float E, float t){
   vec3 col = vec3(.08, .04, .18);
@@ -219,6 +245,7 @@ void main(){
   col = mix(col, col * vec3(.16, .12, .32), uReach * smoothstep(.08, .5, r));
   col = mix(col, vec3(1.), clamp(uFlash, 0., 1.));
   float alpha = smoothstep(.1, .3, E) * (.32 + .68 * smoothstep(.3, .62, E));
+  alpha = max(alpha, clamp(uFloor, 0., 1.));
   alpha = max(alpha, uReach * .88);
   alpha = max(alpha, clamp(uFlash, 0., 1.));
   gl_FragColor = vec4(col * alpha, alpha);
@@ -239,7 +266,7 @@ export class Backdrop {
   constructor(canvas, fallback) {
     this.canvas = canvas;
     this.fallback = fallback;
-    this.state = { E: 0, kick: 0, flash: 0, reach: 0, hue: 0, cx: 0, cy: 0, theme: 0 };
+    this.state = { E: 0, kick: 0, flash: 0, reach: 0, hue: 0, cx: 0, cy: 0, theme: 0, floor: 0 };
     this.gl = null;
     try { this.init(); } catch (e) { console.warn('webgl off', e); this.gl = null; }
     if (!this.gl) { canvas.style.display = 'none'; fallback.style.display = 'block'; }
@@ -261,7 +288,7 @@ export class Backdrop {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     this.u = {};
-    for (const n of ['uRes', 'uCenter', 'uTime', 'uE', 'uKick', 'uFlash', 'uReach', 'uHue', 'uTheme']) this.u[n] = gl.getUniformLocation(prog, n);
+    for (const n of ['uRes', 'uCenter', 'uTime', 'uE', 'uKick', 'uFlash', 'uReach', 'uHue', 'uTheme', 'uFloor']) this.u[n] = gl.getUniformLocation(prog, n);
     this.gl = gl;
     this.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.gl = null; this.canvas.style.display = 'none'; this.fallback.style.display = 'block'; });
   }
@@ -300,6 +327,7 @@ export class Backdrop {
     gl.uniform1f(this.u.uReach, s.reach);
     gl.uniform1f(this.u.uHue, s.hue);
     gl.uniform1f(this.u.uTheme, s.theme);
+    gl.uniform1f(this.u.uFloor, s.floor || 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 }
