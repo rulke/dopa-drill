@@ -1324,6 +1324,12 @@ const FINALES = {
     star.setFace('happy', 'grin', true);
     star.hands.forEach((h) => { h.raise = 1; });
     const y0 = star.y; const y1 = H * 0.62;
+    // Nobody else belongs on a stage behind the curtain: the hero would stand in
+    // the opening next to the performer, and the house belongs on the other side of
+    // it. Their applause is still heard; only the picture changes.
+    const offstage = [hero, ...crowd];
+    const wasVisible = offstage.map((m) => m.visible);
+    offstage.forEach((m) => { m.visible = false; });
     audio.play('swoosh', audio.now(), { v: 0.22 });
     S.flash = 0.3;
     await wait(140);
@@ -1377,6 +1383,7 @@ const FINALES = {
       r.style.transform = `translateX(${lerp(0, open, k)}px)`;
     }, easeInCubic);
     veil.remove();
+    offstage.forEach((m, i) => { m.visible = wasVisible[i]; });
   },};
 
 function bigStamp(text) {
