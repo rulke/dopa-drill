@@ -1297,9 +1297,14 @@ const FINALES = {
     await wait(900);
   },
   // id046 curtain call: the house lights go down and the curtain closes on the
-  // run, the mascot left in the gap to take the bow, the audience throwing petals.
-  // The veil and the curtain sit in the fx-background layer (z-index 3), so the
-  // actors stay in front of the curtain and the card stays in front of both.
+  // run, with a performer of its own left in the gap to take the bow. The veil and
+  // the curtain sit in the fx-background layer (z-index 3), so the performers stay
+  // in front of the curtain and the card stays in front of both.
+  //
+  // It brings its own actor, like the giant and the rider do, rather than moving the
+  // shared hero: a teleported hero had no entrance, could not leave, and left
+  // showResult() to snap it to the result card afterwards. This way the act arrives
+  // from below the floor and the curtain closes over its exit.
   async curtain(W, H) {
     const veil = document.createElement('div');
     veil.className = 'curtain';
@@ -1313,22 +1318,30 @@ const FINALES = {
     const open = W * 0.62; const shut = W * 0.26;
     l.style.width = `${open}px`; r.style.width = `${open}px`;
     l.style.transform = `translateX(${-open}px)`; r.style.transform = `translateX(${open}px)`;
+    // The performer waits below the floor, already wearing the player's colours.
+    const star = heroLike(Math.min(1.15, W / 300));
+    star.place(W / 2, H + 150 * star.S);
+    star.setFace('happy', 'grin', true);
+    star.hands.forEach((h) => { h.raise = 1; });
+    const y0 = star.y; const y1 = H * 0.62;
     audio.play('swoosh', audio.now(), { v: 0.22 });
     S.flash = 0.3;
     await wait(140);
-    await tween(950, (k) => {
-      veil.style.opacity = String(0.2 + 0.8 * k);
-      l.style.transform = `translateX(${lerp(-open, -shut, k)}px)`;
-      r.style.transform = `translateX(${lerp(open, shut, k)}px)`;
-      veil.style.setProperty('--gap', `${lerp(W * 0.5, W * 0.3, k)}px`);
-    }, easeOutCubic);
-    // The performer steps into the light and bows to the house.
-    hero.place(W / 2, H * 0.66);
-    hero.setFace('happy', 'grin', true);
-    hero.hands.forEach((h) => { h.raise = 1; });
-    await wait(260);
-    await tween(760, (k) => { hero.rot = Math.sin(k * Math.PI) * 24; hero.lift = Math.sin(k * Math.PI) * 16; });
-    hero.rot = 0; hero.lift = 0;
+    // The curtain sweeps in while the act rises into the gap.
+    await Promise.all([
+      tween(950, (k) => {
+        veil.style.opacity = String(0.2 + 0.8 * k);
+        l.style.transform = `translateX(${lerp(-open, -shut, k)}px)`;
+        r.style.transform = `translateX(${lerp(open, shut, k)}px)`;
+        veil.style.setProperty('--gap', `${lerp(W * 0.5, W * 0.3, k)}px`);
+      }, easeOutCubic),
+      tween(1000, (k) => { star.y = lerp(y0, y1, k); star.ground = star.y; }, easeOutBack),
+    ]);
+    star.ground = null;
+    // It turns to the house and bows.
+    await wait(220);
+    await tween(760, (k) => { star.rot = Math.sin(k * Math.PI) * 24; star.lift = Math.sin(k * Math.PI) * 16; });
+    star.rot = 0; star.lift = 0;
     // The house applauds, one row after the other.
     crowd.forEach((m, i) => setTimeout(() => {
       m.earL.kick(620); m.earR.kick(620); m.setFace('happy', 'grin', true);
@@ -1342,14 +1355,29 @@ const FINALES = {
     bigStamp(t('100分'));
     S.shake = 10;
     await wait(1200);
-    await tween(650, (k) => {
+    // The curtain falls on the act: it closes right over the performer, who steps
+    // back and sinks behind it, and only then does the stage come back up - empty.
+    await Promise.all([
+      tween(900, (k) => {
+        l.style.transform = `translateX(${lerp(-shut, 0, k)}px)`;
+        r.style.transform = `translateX(${lerp(shut, 0, k)}px)`;
+        veil.style.setProperty('--gap', `${lerp(W * 0.3, 0, k)}px`);
+      }, easeInOutCubic),
+      tween(900, (k) => {
+        star.y = lerp(y1, y1 + 130 * star.S, k);
+        star.ground = star.y;
+        star.opacity = 1 - k;
+      }, easeInCubic),
+    ]);
+    star.destroy(); actors.splice(actors.indexOf(star), 1);
+    await wait(220);
+    await tween(620, (k) => {
       veil.style.opacity = String(1 - k);
-      l.style.transform = `translateX(${lerp(-shut, -open, k)}px)`;
-      r.style.transform = `translateX(${lerp(shut, open, k)}px)`;
+      l.style.transform = `translateX(${lerp(0, -open, k)}px)`;
+      r.style.transform = `translateX(${lerp(0, open, k)}px)`;
     }, easeInCubic);
     veil.remove();
-  },
-};
+  },};
 
 function bigStamp(text) {
   const el = document.createElement('div');
