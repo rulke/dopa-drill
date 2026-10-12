@@ -7,11 +7,11 @@ import { TROPHY } from './trophies.js';
 
 export const CATS = [
   { key: 'bg', name: '背景' },
-  { key: 'mark', name: '答对标记' },
+  { key: 'mark', name: '答对标记', short: '标记' },
   { key: 'particle', name: '彩纸屑' },
   { key: 'music', name: '音乐' },
   { key: 'costume', name: '装扮' },
-  { key: 'color', name: '多巴奇的颜色' },
+  { key: 'color', name: '多巴奇的颜色', short: '颜色' },
   { key: 'crowd', name: '观众' },
   { key: 'finale', name: '谢幕' },
 ];
@@ -96,8 +96,8 @@ addItems([
   { id: 'crowd:full', cat: 'crowd', name: '满座', trophy: 'endlessRuns-3' },
   { id: 'color:nebula', cat: 'color', name: '星云', trophy: 'endlessRuns-30' },
   { id: 'mark:heart', cat: 'mark', name: '心心', trophy: 'endlessRunBest-20' },
-  { id: 'particle:wave', cat: 'particle', name: '浪花', trophy: 'endlessRunBest-50' },
-  { id: 'bg:deep', cat: 'bg', name: '深浪', trophy: 'endlessBest-10' },
+  { id: 'particle:twinkle', cat: 'particle', name: '星星', trophy: 'endlessRunBest-50' },
+  { id: 'bg:steps', cat: 'bg', name: '光阶', trophy: 'endlessBest-10' },
   { id: 'costume:laurel', cat: 'costume', name: '月桂冠', trophy: 'endlessBest-20' },
   { id: 'finale:curtain', cat: 'finale', name: '落幕', trophy: 'endlessClean-12' },
   { id: 'music:endless', cat: 'music', name: '无尽', trophy: 'endlessBest-30' },

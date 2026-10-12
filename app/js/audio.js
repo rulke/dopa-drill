@@ -498,13 +498,17 @@ export const SONGS = {
   // own shape, where the next wave is the same wave one step further out. Am-F-C-G
   // so the loop ends on the lift back into the top of the progression.
   endless: {
-    name: '无尽', prog: [chord(9, [0, 3, 7]), chord(5, [0, 4, 7]), chord(0, [0, 4, 7]), chord(7, [0, 4, 7])],
-    hook: [[76, 79, 81, 79, 76, 74, 72, 74], [77, 81, 84, 81, 79, 77, 76, 77], [79, 84, 83, 79, 76, 79, 81, 79], [74, 79, 83, 79, 81, 79, 77, 74]],
+    // Am-G-F-E is the one four-chord walk no other song here uses, and it is the
+    // tide going out: the bass falls a step every bar and the loop lifts back to
+    // the top. (The first draft sat on Am-F-C-G, which is 电子乐's progression.)
+    name: '无尽', prog: [chord(9, [0, 3, 7]), chord(7, [0, 4, 7]), chord(5, [0, 4, 7]), chord(4, [0, 4, 7])],
+    hook: [[76, 79, 81, 79, 76, 74, 72, 74], [74, 79, 83, 79, 81, 79, 74, 71],
+      [77, 81, 84, 81, 79, 77, 76, 77], [76, 80, 83, 85, 84, 83, 80, 76]],
     step(e, s, bar, t, L, ch, k) {
       // The tide mark: one bell per bar, and the swell under it.
       if (s === 0) e.play('bell', t, { m: ch.tones[0] + 12 + k, dur: e.stepDur * 7, v: 0.16 + 0.02 * Math.min(L, 8) });
       if (L >= 1 && s % 4 === 0) e.play('bass', t, { m: ch.bass + k, dur: e.stepDur * 3, v: 0.4 });
-      if (L >= 2 && s % 8 === 6) e.play('sub', t, { m: ch.bass + k + 7, dur: e.stepDur * 2, v: 0.28 });
+      if (L >= 2 && s % 8 === 6) e.play('glock', t, { m: ch.tones[0] + 12 + k, dur: e.stepDur * 2.4, v: 0.05 });
       const kick = (L >= 3 && s % 4 === 0) || (L >= 1 && (s === 0 || s === 8));
       if (kick) { e.play('kick', t, { v: L < 3 ? 0.6 : 0.85 }); e.kicks.push(t); }
       if (L >= 3 && (s === 4 || s === 12)) e.play('clap', t, { v: 0.6 });

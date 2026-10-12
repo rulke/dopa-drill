@@ -399,10 +399,27 @@ body.reduced .beat-flash { opacity: 0; }
   box-shadow: inset 0 0 40px rgba(0, 0, 0, .45); }
 .curtain-half.left { right: 50%; }
 .curtain-half.right { left: 50%; }
+/* A gathered tie-back with a gold tassel, so a half looks like cloth pulled aside. */
+.curtain-tie { position: absolute; top: 40%; bottom: 40%; width: 15px; display: block;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .3), rgba(255, 255, 255, .18), rgba(0, 0, 0, .3)), #8e1a37;
+  border-left: 2px solid rgba(0, 0, 0, .4); border-right: 2px solid rgba(0, 0, 0, .4); }
+.curtain-half.left .curtain-tie { right: 0; }
+.curtain-half.right .curtain-tie { left: 0; }
+.curtain-tie::after { content: ""; position: absolute; left: 50%; top: 100%; width: 11px; height: 30px; transform: translateX(-50%);
+  background: linear-gradient(#ffd452, #ffb000); clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); }
+/* The valance: a band of cloth with a scalloped edge and a gold trim under it. */
+.curtain-pelmet { position: absolute; left: 0; right: 0; top: 0; height: 52px; display: block;
+  background:
+    linear-gradient(#ffd452, #ffd452) 0 27px / 100% 3px no-repeat,
+    radial-gradient(circle at 22px 0, #9c1f3d 0 21px, transparent 22px) 0 30px / 44px 22px repeat-x,
+    linear-gradient(#6d1129, #8e1a37) 0 0 / 100% 30px no-repeat;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.curtain-floor { position: absolute; left: 50%; bottom: 0; width: 64%; height: 92px; transform: translateX(-50%); display: block;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 246, 200, .5), rgba(255, 246, 200, .14) 45%, transparent 74%); }
 /* The light in the gap: a soft pool around where the mascot stands. */
 .curtain-gap { position: absolute; left: 50%; top: 0; bottom: 0; width: var(--gap, 50%); transform: translateX(-50%); display: block;
   background: radial-gradient(ellipse at 50% 62%, rgba(255, 246, 200, .5), rgba(255, 246, 200, .12) 45%, transparent 72%); }
-body.reduced .curtain-half, body.reduced .curtain-gap { transition: none; }
+body.reduced .curtain-half, body.reduced .curtain-gap, body.reduced .curtain-tie { transition: none; }
 
 /* ------------------------------------------------------------ results */
 #screen-result, #screen-final { align-items: safe center; justify-content: center; padding: 20px 16px; overflow-y: auto; }
@@ -845,7 +862,11 @@ li.done .qbar { background: var(--mint); }
 .co-preview { position: relative; flex: none; height: min(28vh, 220px); margin: 0 14px 8px; border: 3px solid var(--ink); border-radius: 22px; background: rgba(255, 255, 255, .35); box-shadow: 0 5px 0 var(--ink); overflow: hidden; }
 .co-preview .co-mark { left: 50%; top: 50%; right: auto !important; transform-origin: center; translate: -50% -58%; }
 .co-now { position: absolute; left: 10px; top: 8px; margin: 0; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 900; }
-.co-tabs { flex: none; display: flex; gap: 6px; overflow-x: auto; padding: 2px 14px 8px; scrollbar-width: none; }
+/* Eight categories do not fit one row on a phone, and a horizontal strip cannot be
+   scrolled with a wheel or a mouse drag while its scrollbar is hidden - three
+   categories were unreachable on a desktop. Wrapping costs one row of height and
+   works at 320px, where no amount of shortening is enough on its own. */
+.co-tabs { flex: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 14px 8px; }
 .co-tabs::-webkit-scrollbar { display: none; }
 .co-tabs button { flex: none; display: flex; flex-direction: column; align-items: center; padding: 4px 12px; border: 2.5px solid var(--ink); border-radius: 14px; background: #fff; font-size: 12px; font-weight: 900; line-height: 1.2; }
 .co-tabs button small { font-size: 10px; opacity: .6; }

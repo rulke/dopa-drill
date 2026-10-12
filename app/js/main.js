@@ -1295,7 +1295,11 @@ const FINALES = {
   async curtain(W, H) {
     const veil = document.createElement('div');
     veil.className = 'curtain';
-    veil.innerHTML = '<i class="curtain-half left"></i><i class="curtain-half right"></i><i class="curtain-gap"></i>';
+    // Pelmet across the top so the frame reads as a proscenium, a gathered tie-back
+    // with a tassel on each half, and a pool of light on the floor.
+    veil.innerHTML = '<i class="curtain-half left"><b class="curtain-tie"></b></i>'
+      + '<i class="curtain-half right"><b class="curtain-tie"></b></i>'
+      + '<i class="curtain-gap"></i><i class="curtain-pelmet"></i><i class="curtain-floor"></i>';
     document.body.appendChild(veil);
     const [l, r] = veil.querySelectorAll('.curtain-half');
     const open = W * 0.62; const shut = W * 0.26;
@@ -2619,7 +2623,7 @@ const BG_THUMB = {
   space: 'radial-gradient(circle at 30% 60%, #ff9ccc 0 9px, transparent 10px), radial-gradient(ellipse at 30% 60%, transparent 0 13px, #ffe98a 14px 15px, transparent 16px), radial-gradient(circle at 75% 30%, #8fd3ff 0 5px, transparent 6px), linear-gradient(135deg, #14082e, #4a1f6e)',
   festival: 'radial-gradient(ellipse at 30% 45%, #ff4f5e 0 9px, #1b1d4d 10px 11px, transparent 12px), radial-gradient(ellipse at 70% 45%, #ffd23f 0 9px, #1b1d4d 10px 11px, transparent 12px), repeating-linear-gradient(45deg, #fff1e0 0 8px, #ff9aa6 8px 16px)',
   paper: 'radial-gradient(circle at 25% 30%, #fff 0 3px, transparent 4px), radial-gradient(circle at 70% 70%, #fff 0 3px, transparent 4px), repeating-linear-gradient(0deg, #ff8fbd 0 10px, #1b1d4d 10px 11px, #8fb4ff 11px 21px, #1b1d4d 21px 22px, #ffd466 22px 32px, #1b1d4d 32px 33px)',
-  deep: 'repeating-linear-gradient(0deg, rgba(200,235,255,.45) 0 2px, transparent 2px 20px), linear-gradient(#04122c, #0b3a74)',
+  steps: 'repeating-linear-gradient(0deg, rgba(255,246,200,.85) 0 3px, transparent 3px 21px), repeating-linear-gradient(90deg, transparent 0 7px, rgba(255,255,255,.25) 7px 8px, transparent 8px 22px), linear-gradient(#1b1d4d, #2a6fb8)',
 };
 const PT_THUMB = {
   classic: '<rect x="-14" y="-10" width="11" height="7" fill="#ff7ab6" stroke="#1b1d4d" stroke-width="1.5" transform="rotate(-20)"/><rect x="2" y="2" width="11" height="7" fill="#3b6bff" stroke="#1b1d4d" stroke-width="1.5" transform="rotate(25)"/><rect x="0" y="-14" width="11" height="7" fill="#ffd23f" stroke="#1b1d4d" stroke-width="1.5"/>',
@@ -2628,7 +2632,7 @@ const PT_THUMB = {
   bubble: '<circle r="12" fill="rgba(191,234,255,.5)" stroke="#3b8fd6" stroke-width="2"/><circle cx="-4" cy="-4" r="3" fill="#fff"/>',
   candy: '<path d="M-8 0 L-16 -7 L-16 7Z M8 0 L16 -7 L16 7Z" fill="#ffd23f" stroke="#1b1d4d" stroke-width="2" stroke-linejoin="round"/><circle r="8.5" fill="#ff7ab6" stroke="#1b1d4d" stroke-width="2"/>',
   digit: '<text y="8" text-anchor="middle" font-family="Dela Gothic One, sans-serif" font-size="24" fill="#3fdcb0" stroke="#1b1d4d" stroke-width="3" paint-order="stroke">7</text>',
-  wave: '<path d="M-11 5 C-7 -11 9 -11 10 0 C11 8 2 9 1 3" fill="none" stroke="#1b1d4d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M-11 5 C-7 -11 9 -11 10 0 C11 8 2 9 1 3" fill="none" stroke="#8fd3ff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  twinkle: '<path d="M0 -13 L3.8 -4.1 L13 -3.9 L5.7 2.1 L8.2 11.1 L0 6 L-8.2 11.1 L-5.7 2.1 L-13 -3.9 L-3.8 -4.1Z" fill="#ffd23f" stroke="#1b1d4d" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 8 l1.7 2.6 2.6 1.7 -2.6 1.7 -1.7 2.6 -1.7 -2.6 -2.6 -1.7 2.6 -1.7Z" fill="#fff" stroke="#1b1d4d" stroke-width="1.4" stroke-linejoin="round"/>',
 };
 const FINALE_THUMB = {
   classic: '<circle cy="6" r="13" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><circle cx="-14" cy="-2" r="7" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><circle cx="14" cy="-2" r="7" fill="#ff97bf" stroke="#1b1d4d" stroke-width="2"/><ellipse cy="8" rx="9" ry="7" fill="#fff3e4" stroke="#1b1d4d" stroke-width="1.5"/>',
@@ -2664,7 +2668,7 @@ function openCollection() {
 }
 function renderCollection() {
   const got = gotTrophies(); const eq = equipState();
-  $('#co-tabs').innerHTML = ul.CATS.map((c) => { const own = ul.unlockedIn(c.key, got).length; const all = ul.ITEMS.filter((it) => it.cat === c.key).length; return `<button type="button" data-cat="${c.key}" aria-pressed="${c.key === co.cat}">${t(c.name)}<small>${own}/${all}</small></button>`; }).join('');
+  $('#co-tabs').innerHTML = ul.CATS.map((c) => { const own = ul.unlockedIn(c.key, got).length; const all = ul.ITEMS.filter((it) => it.cat === c.key).length; return `<button type="button" data-cat="${c.key}" aria-pressed="${c.key === co.cat}">${t(c.short || c.name)}<small>${own}/${all}</small></button>`; }).join('');
   const items = ul.ITEMS.filter((it) => it.cat === co.cat);
   const auto = eq[co.cat] === 'auto';
   $('#co-note').textContent = auto ? t('「随机」每次都会从拥有的项目里挑选') : t('总是使用选中的项目');

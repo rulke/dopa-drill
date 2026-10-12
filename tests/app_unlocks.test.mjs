@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CATS, ITEMS, ITEM, pickLook, unlockedIn, isUnlocked, defaultEquip, variant } from '../app/js/unlocks.js';
 import { TROPHY } from '../app/js/trophies.js';
+import { readFileSync } from 'node:fs';
 
 test('catalogue: one base item per category, rewards point at real trophies, no trophy gives two', () => {
   for (const c of CATS) assert.equal(ITEMS.filter((it) => it.cat === c.key && it.base).length, 1, c.key);
@@ -34,4 +35,27 @@ test('the look: fixed choices stay, auto picks among unlocked ones only', () => 
   assert.deepEqual([...seenBg], ['bg:night']);
   assert.deepEqual([...seenCostume].sort(), ['costume:cap', 'costume:none']);
   assert.equal(variant('bg:night'), 'night');
+});
+
+// ------------------------------------------------- the collection's tab strip
+// Eight categories do not fit one row on a phone. The strip used to be a hidden
+// horizontal scroller, which is reachable by touch but not by a wheel or a mouse
+// drag - 多巴奇的颜色, 观众 and 谢幕 were simply unopenable on a desktop, and two of
+// the endless rewards live behind those tabs. Wrapping is the fix; this keeps it.
+test('the category strip wraps instead of hiding tabs off the edge', () => {
+  const css = readFileSync(new URL('../app/style.css', import.meta.url), 'utf8');
+  const rule = css.match(/^\.co-tabs \{[^}]*\}/m);
+  assert.ok(rule, 'the tab strip rule went missing');
+  assert.match(rule[0], /flex-wrap:\s*wrap/, 'the strip must wrap: a hidden horizontal scroller cannot be used with a mouse');
+  assert.doesNotMatch(rule[0], /overflow-x:\s*(auto|scroll|hidden)/, 'and must not rely on scrolling sideways');
+});
+
+test('the two longest tab labels have a short form', () => {
+  // The full names still go to the banner, the reward toasts and the docs.
+  for (const key of ['mark', 'color']) {
+    const cat = CATS.find((c) => c.key === key);
+    assert.ok(cat, `no ${key} category`);
+    assert.ok(cat.short, `${cat.name} needs a short label or it pushes the row over`);
+    assert.ok(cat.short.length < cat.name.length);
+  }
 });

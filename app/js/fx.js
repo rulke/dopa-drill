@@ -250,8 +250,8 @@ const THEME_INIT = {
   bubble: (p) => { p.color = pick(['#bfeaff', '#d9f7ff', '#c8d7ff']); p.g = -120; p.drag = 1.8; p.vr = 0; p.size *= rand(0.8, 1.6); },
   candy: (p) => { p.color = pick(['#ff7ab6', '#ffd23f', '#3fdcb0', '#8fb4ff', '#ff9a3c']); },
   digit: (p) => { p.color = pick(['#ff7ab6', '#3b6bff', '#ffd23f', '#3fdcb0', '#a77bff']); p.str = String(Math.floor(Math.random() * 10)); p.vr = rand(-5, 5); },
-  // id046 浪花: a spray curl, the endless mode's shape for confetti.
-  wave: (p) => { p.color = pick(['#8fd3ff', '#bfeaff', '#d9f7ff', '#a8e6ff']); p.vr = rand(-3, 3); p.g = 150; p.drag = 1.1; p.life *= 1.2; },
+  // id046 twinkle: star confetti in the app's own yellow, with the odd white one.
+  twinkle: (p) => { p.color = Math.random() < 0.22 ? '#fff' : pick(['#ffd23f', '#ffd23f', '#ffb000']); p.vr = rand(-6, 6); p.g = 150; p.drag = 1.1; p.life *= 1.2; p.size *= rand(0.85, 1.25); },
 };
 const THEME_DRAW = {
   note: (fx, p) => fx.sprite(`nt${p.color}`, 22, 26, (g) => {
@@ -277,11 +277,12 @@ const THEME_DRAW = {
     g.font = '400 22px "Dela Gothic One", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.lineWidth = 4; g.lineJoin = 'round'; g.strokeStyle = INK; g.strokeText(p.str, 0, 1); g.fillStyle = p.color; g.fillText(p.str, 0, 1);
   }),
-  wave: (fx, p) => fx.sprite(`wv${p.color}`, 28, 24, (g) => {
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    g.beginPath(); g.moveTo(-11, 6); g.bezierCurveTo(-7, -12, 10, -12, 11, 0); g.bezierCurveTo(12, 9, 2, 10, 1, 3);
-    g.strokeStyle = INK; g.lineWidth = 5; g.stroke();
-    g.strokeStyle = p.color; g.lineWidth = 2.8; g.stroke();
+  twinkle: (fx, p) => fx.sprite(`tw${p.color}`, 26, 26, (g) => {
+    // The same five-point star the ring mark uses, so the two read as one family.
+    const star = (r) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2; const rr = i % 2 ? r * 0.42 : r; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); };
+    star(10); g.lineJoin = 'round'; g.strokeStyle = INK; g.lineWidth = 4.2; g.stroke();
+    star(10); g.fillStyle = p.color; g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.2; g.stroke();
   }),
 };
 export const PARTICLE_THEMES = Object.keys(THEME_DRAW);
