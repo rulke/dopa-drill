@@ -110,7 +110,10 @@ vec3 accentAt(float i){
 }
 vec3 steps_(vec2 p, float r, float a, float E, float t){
   // Ink to the night theme's violet: the dark end this palette already uses.
-  vec3 col = mix(vec3(.113, .102, .286), vec3(.055, .063, .196), clamp(.5 - p.y * .5, 0., 1.));
+  // A stage, so the light comes from the floor: brighter at the bottom, in the band
+  // the sea and night themes already occupy (about L50-60). The first draft sat at
+  // L9-13 and read as ink; a straight brightening to L110 drowned the steps.
+  vec3 col = mix(vec3(.20, .19, .42), vec3(.12, .24, .46), clamp(.5 + p.y * .5, 0., 1.));
   float climb = E * 5.2;
   for (int i = 0; i < 6; i++) {
     float fi = float(i);
@@ -143,7 +146,10 @@ vec3 steps_(vec2 p, float r, float a, float E, float t){
   float dh = hash(floor(duv));
   float mote = (1. - smoothstep(.03, .09, length(df))) * step(.6, dh) * smoothstep(.1, .5, E);
   col += vec3(1., .97, .86) * mote * (.45 + .55 * sin(t * 2. + dh * 20.));
-  col = mix(col, vec3(.85, .95, 1.), beatRings(r, t, E) * .18);
+  float pul = smoothstep(.3, .8, E) * (1. - smoothstep(.02, 0., abs(fract(r * 2.4 - t * .8) - .5) - .45));
+  // Saturated and weighted so the ring reads as one of the palette's colours, and
+  // cycles with it: this is the element the eye lands on in the middle of the frame.
+  col += hsv(fract(r * .9 - t * .12 + uHue), .75, 1.) * pul * (.5 + .3 * uKick);
   float tn = smoothstep(.82, 1.08, E);
   col = mix(col, hsv(fract(a / 6.2832 * 2. + r - t * .2 + uHue), .45, 1.), tn * .18 * smoothstep(.05, .4, r) * .5);
   return col;
