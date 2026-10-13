@@ -2,7 +2,9 @@
 
 [中文](README.md) | **English** | [日本語](README.ja.md)
 
-A math drill where the show and the music keep escalating with every problem you solve. Runs entirely in the browser.
+A math drill where the show and the music keep escalating with every problem you solve. **Runs in the browser and on phones and tablets** - installable to the home screen and playable offline.
+
+▶ **Play online: <https://rulke.github.io/dopa-drill/>** (nothing to install)
 
 The mascot "Dopakichi" carries the digits you type and celebrates every correct answer. The further you get, the busier the screen and the music become — the last problem ends in a full-on festival. Wrong answers never kill the momentum, and there is no game over.
 
@@ -13,7 +15,7 @@ The mascot "Dopakichi" carries the digits you type and celebrates every correct 
 - Grade-based play, review, and a skill tree screen
 - Finish the set for 100 points. At an 80% first-try rate or better you can enter the timed Extra stage and chase scores beyond 100
 - Music and sound effects are synthesized with the Web Audio API (no audio files)
-- Works on phones (portrait) and desktops. On desktop, number keys and Backspace work too
+- Works on phones (portrait), tablets and desktops. On desktop, number keys and Backspace work too; on touch screens there is an on-screen keypad
 - Motion intensity is adjustable in the settings; muting is available
 - Records stay on the device (localStorage); nothing is sent anywhere
 
@@ -39,8 +41,10 @@ node tools/serve.mjs 8000 app
 
 ## Installing on a phone or tablet
 
-The game is a plain installable PWA with no build step. Serve `app/` from any
-static host (Cloudflare Pages, GitHub Pages - HTTPS required).
+The game is a plain installable PWA with no build step. **It is already hosted on
+GitHub Pages: open <https://rulke.github.io/dopa-drill/> to play, or install it
+from there as a standalone app.** To host it yourself, serve `app/` from any static
+host (GitHub Pages, Cloudflare Pages - HTTPS required).
 
 - **Android / desktop Chrome**: an install entry appears in the address bar or
   the menu.

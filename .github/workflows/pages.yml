@@ -1,0 +1,48 @@
+name: Publish the game
+
+# The game is a static folder with no build step, so publishing is: check it, then
+# hand app/ to Pages. The check runs first so a broken commit cannot go live - and
+# the same command a developer runs locally is the one that gates the deploy.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes one still in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 159 tests, no install needed: they import the app's own ES modules.
+      - name: Run the tests
+        run: node --test tests/*.test.mjs
+
+      - uses: actions/configure-pages@v5
+
+      # app/ is the whole site. Everything in it is referenced relatively, so it
+      # works unchanged from a project subpath like /dopa-drill/.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app
+
+      - name: Deploy
+        id: deploy
+        uses: actions/deploy-pages@v4
